@@ -1,208 +1,219 @@
 <?php
-
 declare(strict_types=1);
 
-require __DIR__ . '/config.php';
+require __DIR__ . '/db.php';
 
-// CONFIGURE THESE VALUES
-$targetUrl        = 'https://www.dailysokalersomoy.online/news/138822';    // where you finally redirect the user
-$previewImageUrl  = 'https://dailysokalersomoy.online/preview-image.jpg';  // full URL to image used in WhatsApp preview
-$previewTitle     = 'Daily Sokalersomoy tracked link';                    // title shown in preview
-$previewDescription = 'Click to open Daily Sokalersomoy (tracked link).'; // description shown in preview
+header('Content-Type: application/json; charset=utf-8');
 
-ensureTrackingTableExists();
-ensureSettingsTableExists();
-$settings = getTrackerSettings();
-if (!empty($settings['target_url'])) {
-    $targetUrl = (string)$settings['target_url'];
-}
-if (!empty($settings['preview_image_url'])) {
-    $previewImageUrl = (string)$settings['preview_image_url'];
-}
-if (!empty($settings['preview_title'])) {
-    $previewTitle = (string)$settings['preview_title'];
-}
-if (!empty($settings['preview_description'])) {
-    $previewDescription = (string)$settings['preview_description'];
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['ok' => false, 'error' => 'method_not_allowed']);
+    exit;
 }
 
-function getClientIp(): string
+$pdo = db();
+
+$raw = file_get_contents('php://input');
+$data = json_decode($raw, true);
+if (!is_array($data)) {
+    $data = $_POST;
+}
+
+$visitId = isset($data['visit_id']) ? (int)$data['visit_id'] : 0;
+$lat = array_key_exists('latitude', $data) ? (float)$data['latitude'] : null;
+$lon = array_key_exists('longitude', $data) ? (float)$data['longitude'] : null;
+
+// Update precise location for an existing visit
+if ($visitId > 0 && ($lat !== null || $lon !== null)) {
+    try {
+        $stmt = $pdo->prepare('UPDATE visits SET latitude = :lat, longitude = :lon WHERE id = :id');
+        $stmt->execute([
+            ':lat' => $lat,
+            ':lon' => $lon,
+            ':id'  => $visitId,
+        ]);
+        echo json_encode(['ok' => true, 'updated' => true]);
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => 'update_failed']);
+    }
+    exit;
+}
+
+// Insert new visit
+$ip = get_client_ip();
+$ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+$ref = $_SERVER['HTTP_REFERER'] ?? null;
+$url = $data['url'] ?? ($ref ?? '');
+$lang = $data['language'] ?? ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null);
+$sw = isset($data['screen_width']) ? (int)$data['screen_width'] : null;
+$sh = isset($data['screen_height']) ? (int)$data['screen_height'] : null;
+
+$uaInfo = parse_ua($ua);
+$geo = geo_ip($ip);
+
+if ($lat === null && isset($geo['latitude'])) {
+    $lat = $geo['latitude'];
+}
+if ($lon === null && isset($geo['longitude'])) {
+    $lon = $geo['longitude'];
+}
+
+try {
+    $sql = 'INSERT INTO visits (
+        ip, country, region, city,
+        latitude, longitude, isp,
+        user_agent, browser_name, browser_version,
+        os_name, os_version, device_type,
+        referer, url, language,
+        screen_width, screen_height, created_at
+    ) VALUES (
+        :ip, :country, :region, :city,
+        :lat, :lon, :isp,
+        :ua, :bname, :bver,
+        :os, :osver, :dtype,
+        :ref, :url, :lang,
+        :sw, :sh, NOW()
+    )';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':ip' => $ip,
+        ':country' => $geo['country'] ?? null,
+        ':region' => $geo['region'] ?? null,
+        ':city' => $geo['city'] ?? null,
+        ':lat' => $lat,
+        ':lon' => $lon,
+        ':isp' => $geo['isp'] ?? null,
+        ':ua' => $ua,
+        ':bname' => $uaInfo['browser_name'] ?? null,
+        ':bver' => $uaInfo['browser_version'] ?? null,
+        ':os' => $uaInfo['os_name'] ?? null,
+        ':osver' => $uaInfo['os_version'] ?? null,
+        ':dtype' => $uaInfo['device_type'] ?? null,
+        ':ref' => $ref,
+        ':url' => $url,
+        ':lang' => $lang,
+        ':sw' => $sw,
+        ':sh' => $sh,
+    ]);
+
+    $id = (int)$pdo->lastInsertId();
+    echo json_encode(['ok' => true, 'id' => $id]);
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['ok' => false, 'error' => 'insert_failed']);
+}
+
+function parse_ua(string $ua): array
 {
-    $keys = [
-        'HTTP_CLIENT_IP',
-        'HTTP_X_FORWARDED_FOR',
-        'HTTP_X_FORWARDED',
-        'HTTP_X_REAL_IP',
-        'HTTP_X_CLUSTER_CLIENT_IP',
-        'HTTP_FORWARDED_FOR',
-        'HTTP_FORWARDED',
-        'REMOTE_ADDR',
-    ];
+    $browser = 'Unknown';
+    $bver = '';
+    $os = 'Unknown';
+    $osver = '';
+    $dtype = 'desktop';
 
-    foreach ($keys as $key) {
-        if (!empty($_SERVER[$key])) {
-            $ipList = explode(',', (string)$_SERVER[$key]);
-            foreach ($ipList as $ip) {
-                $ip = trim($ip);
-                if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                    return $ip;
-                }
-            }
-        }
+    $ual = strtolower($ua);
+
+    if (strpos($ual, 'mobile') !== false || strpos($ual, 'android') !== false || strpos($ual, 'iphone') !== false) {
+        $dtype = 'mobile';
+    } elseif (strpos($ual, 'ipad') !== false || strpos($ual, 'tablet') !== false) {
+        $dtype = 'tablet';
     }
 
-    return '0.0.0.0';
-}
-
-function parseDevice(string $userAgent): array
-{
-    $ua = strtolower($userAgent);
-
-    $deviceType = 'desktop';
-    if (preg_match('/mobile|android|iphone|ipod|blackberry|phone/', $ua)) {
-        $deviceType = 'mobile';
-    } elseif (preg_match('/tablet|ipad/', $ua)) {
-        $deviceType = 'tablet';
-    } elseif (preg_match('/bot|crawler|spider|crawling/', $ua)) {
-        $deviceType = 'bot';
+    if (preg_match('/Edg\\/([\\d\\.]+)/', $ua, $m)) {
+        $browser = 'Edge';
+        $bver = $m[1];
+    } elseif (preg_match('/OPR\\/([\\d\\.]+)/', $ua, $m)) {
+        $browser = 'Opera';
+        $bver = $m[1];
+    } elseif (preg_match('/Chrome\\/([\\d\\.]+)/', $ua, $m) && strpos($ua, 'Chromium') === false) {
+        $browser = 'Chrome';
+        $bver = $m[1];
+    } elseif (preg_match('/Firefox\\/([\\d\\.]+)/', $ua, $m)) {
+        $browser = 'Firefox';
+        $bver = $m[1];
+    } elseif (preg_match('/Version\\/([\\d\\.]+).*Safari/', $ua, $m)) {
+        $browser = 'Safari';
+        $bver = $m[1];
+    } elseif (preg_match('/MSIE\\s([\\d\\.]+)/', $ua, $m)) {
+        $browser = 'Internet Explorer';
+        $bver = $m[1];
+    } elseif (preg_match('/Trident\\/.*rv:([\\d\\.]+)/', $ua, $m)) {
+        $browser = 'Internet Explorer';
+        $bver = $m[1];
     }
 
-    $os = 'unknown';
-    if (strpos($ua, 'windows nt 10') !== false) {
-        $os = 'Windows 10';
-    } elseif (strpos($ua, 'windows nt 6.3') !== false) {
-        $os = 'Windows 8.1';
-    } elseif (strpos($ua, 'windows nt 6.2') !== false) {
-        $os = 'Windows 8';
-    } elseif (strpos($ua, 'windows nt 6.1') !== false) {
-        $os = 'Windows 7';
-    } elseif (strpos($ua, 'iphone') !== false || strpos($ua, 'ipad') !== false || strpos($ua, 'ipod') !== false) {
-        $os = 'iOS';
-    } elseif (strpos($ua, 'android') !== false) {
+    if (preg_match('/Windows NT 10\.0/', $ua)) {
+        $os = 'Windows';
+        $osver = '10';
+    } elseif (preg_match('/Windows NT 6\.3/', $ua)) {
+        $os = 'Windows';
+        $osver = '8.1';
+    } elseif (preg_match('/Windows NT 6\.2/', $ua)) {
+        $os = 'Windows';
+        $osver = '8';
+    } elseif (preg_match('/Windows NT 6\.1/', $ua)) {
+        $os = 'Windows';
+        $osver = '7';
+    } elseif (stripos($ua, 'Android') !== false) {
         $os = 'Android';
-    } elseif (strpos($ua, 'mac os x') !== false) {
+    } elseif (stripos($ua, 'iPhone') !== false || stripos($ua, 'iPad') !== false || stripos($ua, 'iOS') !== false) {
+        $os = 'iOS';
+    } elseif (stripos($ua, 'Mac OS X') !== false) {
         $os = 'macOS';
-    } elseif (strpos($ua, 'linux') !== false) {
+    } elseif (stripos($ua, 'Linux') !== false) {
         $os = 'Linux';
     }
 
-    $browser = 'unknown';
-    if (strpos($ua, 'edg/') !== false) {
-        $browser = 'Edge';
-    } elseif (strpos($ua, 'chrome/') !== false && strpos($ua, 'safari/') !== false) {
-        $browser = 'Chrome';
-    } elseif (strpos($ua, 'safari/') !== false && strpos($ua, 'chrome/') === false) {
-        $browser = 'Safari';
-    } elseif (strpos($ua, 'firefox/') !== false) {
-        $browser = 'Firefox';
-    } elseif (strpos($ua, 'msie') !== false || strpos($ua, 'trident/') !== false) {
-        $browser = 'Internet Explorer';
-    } elseif (strpos($ua, 'opera') !== false || strpos($ua, 'opr/') !== false) {
-        $browser = 'Opera';
-    }
-
-    return [$deviceType, $os, $browser];
+    return [
+        'browser_name' => $browser,
+        'browser_version' => $bver,
+        'os_name' => $os,
+        'os_version' => $osver,
+        'device_type' => $dtype,
+    ];
 }
 
-function getGeoFromIp(string $ip): array
+function geo_ip(string $ip): array
 {
-    $result = [
-        'country'   => null,
-        'region'    => null,
-        'city'      => null,
-        'latitude'  => null,
+    $out = [
+        'country' => null,
+        'region' => null,
+        'city' => null,
+        'latitude' => null,
         'longitude' => null,
+        'isp' => null,
     ];
 
-    if ($ip === '127.0.0.1' || $ip === '::1' || $ip === '0.0.0.0') {
-        return $result;
+    if ($ip === '') {
+        return $out;
     }
 
-    $url  = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,country,regionName,city,lat,lon';
-    $json = @file_get_contents($url);
+    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,country,regionName,city,lat,lon,isp';
 
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 2,
+        ],
+    ]);
+
+    $json = @file_get_contents($url, false, $context);
     if ($json === false) {
-        return $result;
+        return $out;
     }
 
     $data = json_decode($json, true);
-
     if (!is_array($data) || ($data['status'] ?? '') !== 'success') {
-        return $result;
+        return $out;
     }
 
-    $result['country']   = $data['country']     ?? null;
-    $result['region']    = $data['regionName']  ?? null;
-    $result['city']      = $data['city']        ?? null;
-    $result['latitude']  = $data['lat']         ?? null;
-    $result['longitude'] = $data['lon']         ?? null;
+    $out['country'] = $data['country'] ?? null;
+    $out['region'] = $data['regionName'] ?? null;
+    $out['city'] = $data['city'] ?? null;
+    $out['latitude'] = isset($data['lat']) ? (float)$data['lat'] : null;
+    $out['longitude'] = isset($data['lon']) ? (float)$data['lon'] : null;
+    $out['isp'] = $data['isp'] ?? null;
 
-    return $result;
+    return $out;
 }
-
-$ip             = getClientIp();
-$userAgent      = $_SERVER['HTTP_USER_AGENT']      ?? '';
-$referrer       = $_SERVER['HTTP_REFERER']         ?? null;
-$acceptLanguage = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? null;
-
-[$deviceType, $os, $browser] = parseDevice($userAgent);
-$geo = getGeoFromIp($ip);
-
-$db = getDb();
-
-$stmt = $db->prepare(
-    'INSERT INTO tracking_logs (
-        clicked_at, ip, country, region, city, latitude, longitude,
-        device_type, os, browser, user_agent, referrer, accept_language, target_url
-     ) VALUES (
-        NOW(), :ip, :country, :region, :city, :lat, :lon,
-        :device_type, :os, :browser, :ua, :ref, :lang, :target
-     )'
-);
-
-$stmt->execute([
-    ':ip'          => $ip,
-    ':country'     => $geo['country'],
-    ':region'      => $geo['region'],
-    ':city'        => $geo['city'],
-    ':lat'         => $geo['latitude'],
-    ':lon'         => $geo['longitude'],
-    ':device_type' => $deviceType,
-    ':os'          => $os,
-    ':browser'     => $browser,
-    ':ua'          => $userAgent,
-    ':ref'         => $referrer,
-    ':lang'        => $acceptLanguage,
-    ':target'      => $targetUrl,
-]);
-
-$scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-$currentUrl = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? '') . ($_SERVER['REQUEST_URI'] ?? '');
-$ogImage = $previewImageUrl;
-if ($ogImage !== '' && $ogImage[0] === '/') {
-    $host = $_SERVER['HTTP_HOST'] ?? '';
-    $ogImage = $scheme . '://' . $host . $ogImage;
-}
-
-header('Content-Type: text/html; charset=utf-8');
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title><?php echo htmlspecialchars($previewTitle, ENT_QUOTES, 'UTF-8'); ?></title>
-    <meta name="description" content="<?php echo htmlspecialchars($previewDescription, ENT_QUOTES, 'UTF-8'); ?>">
-
-    <meta property="og:title" content="<?php echo htmlspecialchars($previewTitle, ENT_QUOTES, 'UTF-8'); ?>">
-    <meta property="og:description" content="<?php echo htmlspecialchars($previewDescription, ENT_QUOTES, 'UTF-8'); ?>">
-    <meta property="og:image" content="<?php echo htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8'); ?>">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="<?php echo htmlspecialchars($currentUrl, ENT_QUOTES, 'UTF-8'); ?>">
-
-    <meta http-equiv="refresh" content="1;url=<?php echo htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8'); ?>">
-</head>
-<body>
-    <p>Redirecting...</p>
-    <p>If you are not redirected automatically, <a href="<?php echo htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8'); ?>">click here</a>.</p>
-</body>
-</html>
