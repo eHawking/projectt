@@ -185,7 +185,7 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
     <h1>Tracking Dashboard</h1>
     <div>
         <span style="margin-right: 10px; font-size: 0.9rem;">Logged in as <?= h($_SESSION['admin_username'] ?? 'admin') ?></span>
-        <a href="logout.php">Logout</a>
+        <a href="/admin/logout">Logout</a>
     </div>
 </header>
 <div class="container">
@@ -242,7 +242,7 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
             </select>
 
             <button type="submit">Apply</button>
-            <a href="export.php?<?= http_build_query(['date_from' => $dateFrom, 'date_to' => $dateTo, 'country' => $country, 'device_type' => $deviceType]) ?>" style="margin-left: 10px;">Export CSV</a>
+            <a href="/admin/export?<?= http_build_query(['date_from' => $dateFrom, 'date_to' => $dateTo, 'country' => $country, 'device_type' => $deviceType]) ?>" style="margin-left: 10px;">Export CSV</a>
         </form>
     </div>
 
@@ -262,7 +262,7 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
         <?php foreach ($visits as $v): ?>
             <tr>
                 <td><?= h($v['created_at']) ?></td>
-                <td><a href="visit.php?id=<?= (int)$v['id'] ?>"><?= h($v['ip']) ?></a></td>
+                <td><a href="/admin/visit?id=<?= (int)$v['id'] ?>"><?= h($v['ip']) ?></a></td>
                 <td><?= h(trim(($v['country'] ?? '') . ' / ' . ($v['city'] ?? ''), ' /')) ?></td>
                 <td><?= h($v['browser_name'] ?? '') ?></td>
                 <td><?= h($v['os_name'] ?? '') ?></td>

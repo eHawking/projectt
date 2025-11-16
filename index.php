@@ -1,4 +1,4 @@
 <?php
 // Simple front controller: redirect root to the tracking landing page.
-header('Location: landing.php');
+header('Location: /landing');
 exit;

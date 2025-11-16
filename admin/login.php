@@ -4,7 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 
 if (is_logged_in()) {
-    header('Location: dashboard.php');
+    header('Location: /admin/dashboard');
     exit;
 }
 
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user && password_verify($password, $user['password_hash'])) {
             $_SESSION['admin_id'] = (int)$user['id'];
             $_SESSION['admin_username'] = $username;
-            header('Location: dashboard.php');
+            header('Location: /admin/dashboard');
             exit;
         }
 

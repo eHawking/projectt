@@ -73,7 +73,7 @@ if (!$visit) {
 </head>
 <body>
 <header>
-    <a href="dashboard.php">&larr; Back to dashboard</a>
+    <a href="/admin/dashboard">&larr; Back to dashboard</a>
 </header>
 <div class="container">
     <h2>Visit #<?= (int)$visit['id'] ?></h2>

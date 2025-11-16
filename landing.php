@@ -3,10 +3,22 @@ declare(strict_types=1);
 
 require __DIR__ . '/config.php';
 
+// Path of the current request (e.g. /news/138822)
+$uri = $_SERVER['REQUEST_URI'] ?? '/landing';
+$path = parse_url($uri, PHP_URL_PATH) ?? '/landing';
+
+// Pretend canonical domain is dailysokalersomoy.com for previews
+$pageUrl = 'https://www.dailysokalersomoy.com' . $path;
+
+// If this is a /news/{id} URL, build a target URL on the .com site
+$targetUrl = null;
+if (preg_match('#^/news/(\d+)#', $path)) {
+    $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
+}
+
 $title = 'Daily Sokalersomoy – Smart Link';
 $description = 'Open this link to view content. We use basic analytics (IP, device, approximate location) to improve our service.';
 $imageUrl = BASE_URL . '/assets/img/preview.jpg';
-$pageUrl = BASE_URL . '/landing.php';
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,9 +118,14 @@ $pageUrl = BASE_URL . '/landing.php';
     <p class="note">
         By continuing to use this link, you agree to our use of analytics as described above.
     </p>
+    <?php if ($targetUrl !== null): ?>
+        <p style="margin-top: 8px; font-size: 0.9rem;">
+            <a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Continue to article on dailysokalersomoy.com</a>
+        </p>
+    <?php endif; ?>
 </div>
 
-<script src="assets/js/tracker.js"></script>
+<script src="/assets/js/tracker.js"></script>
 <script>
 (function () {
   var allowBtn = document.getElementById('btn-allow-location');
