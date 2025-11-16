@@ -34,95 +34,217 @@ $imageUrl = BASE_URL . '/assets/img/preview.jpg';
     <meta property="og:type" content="website">
 
     <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at top left, #1e293b 0, #020617 45%, #020617 100%);
+            --card-bg: rgba(15, 23, 42, 0.96);
+            --accent: #22c55e;
+            --accent-soft: rgba(34, 197, 94, 0.16);
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --border-subtle: rgba(148, 163, 184, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            padding: 0;
+            min-height: 100vh;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f5f5f5;
-            color: #222;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
         }
+
         .page {
-            max-width: 480px;
-            margin: 40px auto;
-            padding: 24px 20px 32px;
-            background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.06);
-            text-align: center;
+            width: 100%;
+            max-width: 520px;
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 24px 22px 26px;
+            box-shadow:
+                0 18px 60px rgba(15, 23, 42, 0.85),
+                0 0 0 1px rgba(148, 163, 184, 0.25);
+            position: relative;
+            overflow: hidden;
         }
+
+        .page::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 55%);
+            pointer-events: none;
+        }
+
+        .page-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        .badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: var(--accent);
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+        }
+
         h1 {
-            margin-top: 0;
+            margin: 0 0 6px 0;
             font-size: 1.6rem;
+            letter-spacing: -0.02em;
         }
-        p {
-            line-height: 1.5;
+
+        .subtitle {
+            margin: 0 0 18px 0;
             font-size: 0.98rem;
+            color: var(--text-muted);
+            line-height: 1.5;
         }
+
         .banner {
             margin-top: 20px;
-            padding: 14px 12px;
-            background: #f0f4ff;
-            border-radius: 8px;
+            padding: 14px 14px 16px;
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 12px;
             font-size: 0.9rem;
             text-align: left;
+            border: 1px solid rgba(148, 163, 184, 0.45);
         }
+
         .banner p {
-            margin: 0 0 10px 0;
+            margin: 0 0 12px 0;
+            color: var(--text-muted);
         }
+
+        .banner-heading {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #9ca3af;
+            margin-bottom: 8px;
+        }
+
         .buttons {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
         }
+
         button {
             border: none;
-            border-radius: 6px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
+            border-radius: 999px;
+            padding: 9px 18px;
+            font-size: 0.86rem;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: transform 0.12s ease-out, box-shadow 0.12s ease-out, background-color 0.12s ease-out;
+            font-weight: 500;
+            white-space: nowrap;
         }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
         #btn-allow-location {
-            background: #2563eb;
-            color: #fff;
+            background: var(--accent);
+            color: #022c22;
+            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.25);
         }
+
+        #btn-allow-location:hover {
+            background: #16a34a;
+        }
+
         #btn-no-location {
-            background: #e5e7eb;
-            color: #111827;
+            background: rgba(15, 23, 42, 0.9);
+            color: var(--text-main);
+            border: 1px solid rgba(148, 163, 184, 0.4);
         }
+
+        #btn-no-location:hover {
+            background: rgba(15, 23, 42, 0.8);
+        }
+
         .note {
-            margin-top: 12px;
-            font-size: 0.8rem;
-            color: #6b7280;
+            margin-top: 18px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .note a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .note a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .page {
+                padding: 20px 16px 22px;
+            }
         }
     </style>
 </head>
 <body>
 <div class="page">
-    <h1>Daily Sokalersomoy</h1>
-    <p>
-        Thanks for opening this link. We use basic analytics (IP, browser, device type, approximate
-        location from IP) to understand visits and improve our service.
-    </p>
-
-    <div id="consent-banner" class="banner">
-        <p>
-            Optionally, you can allow your precise location (GPS) to be shared once using your browser's
-            location permission. This is used only for our own analytics and not shared with third parties.
-        </p>
-        <div class="buttons">
-            <button id="btn-allow-location">Allow location</button>
-            <button id="btn-no-location">Continue without location</button>
+    <div class="page-inner">
+        <div class="badge">
+            <span class="badge-dot"></span>
+            Smart visit analytics for Daily Sokalersomoy
         </div>
-    </div>
-
-    <p class="note">
-        By continuing to use this link, you agree to our use of analytics as described above.
-    </p>
-    <?php if ($targetUrl !== null): ?>
-        <p style="margin-top: 8px; font-size: 0.9rem;">
-            <a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Continue to article on dailysokalersomoy.com</a>
+        <h1>Daily Sokalersomoy</h1>
+        <p class="subtitle">
+            Thanks for opening this secure smart link. We use basic analytics (IP, browser, device type,
+            approximate location from IP) to understand visits and improve our service.
         </p>
-    <?php endif; ?>
+
+        <div id="consent-banner" class="banner">
+            <div class="banner-heading">Optional precise location</div>
+            <p>
+                You can share your precise location (GPS) once using your browser's permission. This is used
+                only for our own analytics and is not shared with third parties.
+            </p>
+            <div class="buttons">
+                <button id="btn-allow-location">Allow location</button>
+                <button id="btn-no-location">Continue without location</button>
+            </div>
+        </div>
+
+        <p class="note">
+            By continuing to use this link, you agree to our use of analytics as described above.
+        </p>
+        <?php if ($targetUrl !== null): ?>
+            <p class="note" style="margin-top: 10px;">
+                <a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Continue to article on dailysokalersomoy.com</a>
+            </p>
+        <?php endif; ?>
+    </div>
 </div>
 
 <script src="/assets/js/tracker.js"></script>

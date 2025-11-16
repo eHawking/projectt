@@ -27,15 +27,31 @@ if (!$visit) {
     <title>Visit #<?= (int)$visit['id'] ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at top left, #020617 0, #020617 50%, #000000 100%);
+            --header-bg: rgba(15, 23, 42, 0.98);
+            --card-bg: rgba(15, 23, 42, 0.96);
+            --border-subtle: rgba(148, 163, 184, 0.35);
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --accent: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f3f4f6;
+            background: var(--bg-gradient);
+            color: var(--text-main);
         }
         header {
-            background: #1f2937;
+            background: var(--header-bg);
             color: #ffffff;
             padding: 12px 20px;
+            border-bottom: 1px solid var(--border-subtle);
         }
         header a {
             color: #e5e7eb;
@@ -43,27 +59,30 @@ if (!$visit) {
             font-size: 0.9rem;
         }
         .container {
-            max-width: 800px;
+            max-width: 860px;
             margin: 20px auto;
             padding: 0 16px 32px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #ffffff;
-            border-radius: 8px;
+            background: var(--card-bg);
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            box-shadow:
+                0 14px 40px rgba(15, 23, 42, 0.7),
+                0 0 0 1px rgba(148, 163, 184, 0.35);
             font-size: 0.86rem;
         }
         th, td {
             padding: 8px 10px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid rgba(30, 64, 175, 0.35);
             text-align: left;
         }
         th {
             width: 160px;
-            background: #f9fafb;
+            background: rgba(15, 23, 42, 0.96);
+            color: var(--text-muted);
         }
         td {
             max-width: 520px;

@@ -73,22 +73,41 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
     <title>Admin Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at top left, #020617 0, #020617 50%, #000000 100%);
+            --header-bg: rgba(15, 23, 42, 0.98);
+            --card-bg: rgba(15, 23, 42, 0.96);
+            --card-elevated: rgba(15, 23, 42, 0.98);
+            --accent: #22c55e;
+            --accent-soft: rgba(34, 197, 94, 0.15);
+            --border-subtle: rgba(148, 163, 184, 0.35);
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f3f4f6;
+            background: var(--bg-gradient);
+            color: var(--text-main);
         }
         header {
-            background: #1f2937;
-            color: #ffffff;
+            background: var(--header-bg);
+            color: #e5e7eb;
             padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.35);
         }
         header h1 {
             margin: 0;
             font-size: 1.2rem;
+            letter-spacing: -0.02em;
         }
         header a {
             color: #e5e7eb;
@@ -96,8 +115,8 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
             font-size: 0.9rem;
         }
         .container {
-            max-width: 1100px;
-            margin: 20px auto;
+            max-width: 1160px;
+            margin: 20px auto 28px;
             padding: 0 16px 32px;
         }
         .cards {
@@ -108,75 +127,118 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
         }
         .card {
             flex: 1 1 200px;
-            background: #ffffff;
-            border-radius: 8px;
+            background: var(--card-bg);
+            border-radius: 14px;
             padding: 10px 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            box-shadow:
+                0 14px 40px rgba(15, 23, 42, 0.7),
+                0 0 0 1px rgba(148, 163, 184, 0.35);
         }
         .card-title {
-            font-size: 0.8rem;
-            color: #6b7280;
+            font-size: 0.82rem;
+            color: var(--text-muted);
             margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.11em;
         }
         .card-value {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 600;
         }
         .filters {
-            background: #ffffff;
-            border-radius: 8px;
+            background: var(--card-elevated);
+            border-radius: 14px;
             padding: 10px 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            box-shadow:
+                0 14px 40px rgba(15, 23, 42, 0.7),
+                0 0 0 1px rgba(148, 163, 184, 0.35);
             margin-bottom: 20px;
             font-size: 0.9rem;
         }
         .filters label {
             margin-right: 6px;
+            color: var(--text-muted);
         }
         .filters input,
         .filters select {
             margin-right: 8px;
             margin-bottom: 4px;
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            padding: 4px 6px;
+            font-size: 0.86rem;
+        }
+        .filters button {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: none;
+            background: var(--accent);
+            color: #022c22;
+            font-size: 0.86rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .filters a {
+            font-size: 0.85rem;
+            color: var(--accent);
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #ffffff;
-            border-radius: 8px;
+            background: var(--card-bg);
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            box-shadow:
+                0 14px 40px rgba(15, 23, 42, 0.7),
+                0 0 0 1px rgba(148, 163, 184, 0.35);
             font-size: 0.85rem;
         }
         th, td {
             padding: 8px 10px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid rgba(30, 64, 175, 0.35);
             text-align: left;
         }
         th {
-            background: #f9fafb;
+            background: rgba(15, 23, 42, 0.96);
             font-weight: 600;
+            color: var(--text-muted);
         }
         tr:nth-child(even) td {
-            background: #f9fafb;
+            background: rgba(15, 23, 42, 0.9);
+        }
+        tr:hover td {
+            background: rgba(15, 118, 110, 0.22);
+        }
+        td a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        td a:hover {
+            text-decoration: underline;
         }
         .pagination {
             margin-top: 10px;
             font-size: 0.85rem;
+            color: var(--text-muted);
         }
         .pagination a {
             margin-right: 4px;
             text-decoration: none;
-            color: #2563eb;
+            color: var(--accent);
         }
         .pagination span.current {
             margin-right: 4px;
             font-weight: 600;
+            color: var(--text-main);
         }
         .top-list {
             list-style: none;
             padding-left: 0;
             margin: 4px 0 0 0;
             font-size: 0.8rem;
+            color: var(--text-muted);
         }
     </style>
 </head>

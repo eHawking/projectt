@@ -44,17 +44,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Init Admin User</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f3f4f6; margin:0; }
-        .box { max-width: 380px; margin: 60px auto; background:#fff; padding:20px 18px 24px; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.08); }
-        h1 { margin-top:0; font-size:1.3rem; text-align:center; }
-        label { display:block; font-size:0.9rem; margin-bottom:4px; }
-        input[type="text"], input[type="password"] { width:100%; padding:8px; margin-bottom:12px; border-radius:6px; border:1px solid #d1d5db; box-sizing:border-box; }
-        button { width:100%; padding:9px; border-radius:6px; border:none; background:#16a34a; color:#fff; font-size:0.95rem; cursor:pointer; }
+        :root {
+            --bg-gradient: radial-gradient(circle at top left, #111827 0, #020617 40%, #020617 100%);
+            --card-bg: rgba(15, 23, 42, 0.96);
+            --accent: #22c55e;
+            --accent-strong: #16a34a;
+            --text-main: #e5e7eb;
+            --text-muted: #9ca3af;
+            --border-subtle: rgba(148, 163, 184, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body { 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: var(--bg-gradient); 
+            margin: 0; 
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            color: var(--text-main);
+        }
+        .box { 
+            width: 100%;
+            max-width: 380px; 
+            margin: 0 auto; 
+            background: var(--card-bg); 
+            padding: 22px 18px 24px; 
+            border-radius: 18px; 
+            box-shadow:0 18px 60px rgba(15,23,42,0.85), 0 0 0 1px rgba(148,163,184,0.35); 
+        }
+        h1 { 
+            margin-top:0; 
+            font-size:1.3rem; 
+            text-align:center; 
+            letter-spacing:-0.02em;
+        }
+        label { 
+            display:block; 
+            font-size:0.9rem; 
+            margin-bottom:4px; 
+            color: var(--text-muted);
+        }
+        input[type="text"], input[type="password"] { 
+            width:100%; 
+            padding:9px 10px; 
+            margin-bottom:12px; 
+            border-radius:10px; 
+            border:1px solid var(--border-subtle); 
+            box-sizing:border-box; 
+            background: rgba(15,23,42,0.9);
+            color: var(--text-main);
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline:none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(34,197,94,0.4);
+        }
+        button { 
+            width:100%; 
+            padding:9px; 
+            border-radius:999px; 
+            border:none; 
+            background:var(--accent); 
+            color:#022c22; 
+            font-size:0.95rem; 
+            cursor:pointer; 
+            font-weight:500;
+            box-shadow:0 12px 26px rgba(34,197,94,0.25);
+        }
+        button:hover {
+            background: var(--accent-strong);
+        }
         .msg { font-size:0.85rem; margin-bottom:10px; text-align:center; }
-        .msg.error { color:#b91c1c; }
-        .msg.success { color:#166534; }
-        .note { font-size:0.75rem; color:#6b7280; margin-top:10px; text-align:center; }
-        a { color:#2563eb; }
+        .msg.error { color:#f97373; }
+        .msg.success { color:#22c55e; }
+        .note { font-size:0.75rem; color:var(--text-muted); margin-top:10px; text-align:center; }
+        a { color:#22c55e; }
     </style>
 </head>
 <body>
