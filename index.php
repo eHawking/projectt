@@ -49,64 +49,100 @@ function index_extract_metadata(string $html): array
     ];
 }
 
-$iframeUrl = 'https://dailysokalersomoy.com';
+$origin = 'https://dailysokalersomoy.com';
 
-$title = 'Daily Sokalersomoy';
-$description = 'Latest news and updates from Daily Sokalersomoy.';
-$imageUrl = $iframeUrl . '/favicon.ico';
-$pageUrl = 'https://dailysokalersomoy.online';
+$uri = $_SERVER['REQUEST_URI'] ?? '/';
+$path = parse_url($uri, PHP_URL_PATH) ?? '/';
+$queryString = $_SERVER['QUERY_STRING'] ?? '';
 
-$html = index_fetch_url_content($iframeUrl);
-if ($html !== null) {
-    $meta = index_extract_metadata($html);
-    if ($meta['title'] !== null) {
-        $title = $meta['title'];
-    }
-    if ($meta['description'] !== null) {
-        $description = $meta['description'];
-    }
-    if ($meta['image'] !== null) {
-        $imageUrl = $meta['image'];
-    }
+$targetUrl = rtrim($origin, '/') . $path;
+if ($queryString !== '') {
+    $targetUrl .= '?' . $queryString;
 }
-?><!DOCTYPE html>
+
+$html = index_fetch_url_content($targetUrl);
+
+if ($html === null) {
+    header('Content-Type: text/html; charset=utf-8');
+    ?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title><?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?></title>
+    <title>Daily Sokalersomoy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="<?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8') ?>">
-    <meta property="og:title" content="<?= htmlspecialchars($title, ENT_QUOTES, 'UTF-8') ?>">
-    <meta property="og:description" content="<?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8') ?>">
-    <meta property="og:image" content="<?= htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8') ?>">
-    <meta property="og:url" content="<?= htmlspecialchars($pageUrl, ENT_QUOTES, 'UTF-8') ?>">
-    <meta property="og:type" content="website">
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-        }
-        body {
-            background: #020617;
-        }
-        .frame-wrapper {
-            width: 100%;
-            height: 100%;
-        }
-        .frame-wrapper iframe {
-            border: 0;
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-    </style>
 </head>
 <body>
-<div class="frame-wrapper">
-    <iframe src="https://dailysokalersomoy.com" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-</div>
-<script src="/assets/js/tracker.js"></script>
+    <p>Unable to load content from dailysokalersomoy.com.</p>
+    <p><a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Open original site</a></p>
 </body>
 </html>
+<?php
+    exit;
+}
 
+// Insert <base> for static assets if not present
+if (stripos($html, '<head') !== false && stripos($html, '<base ') === false) {
+    $html = preg_replace(
+        '#(<head[^>]*>)#i',
+        '$1' . "\n" . '<base href="' . htmlspecialchars($origin, ENT_QUOTES, 'UTF-8') . '/">' . "\n",
+        $html,
+        1
+    );
+}
+
+$host = $_SERVER['HTTP_HOST'] ?? 'dailysokalersomoy.online';
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+$proxyOrigin = $scheme . $host;
+
+$proxyJs = <<<HTML
+<script src="/assets/js/tracker.js?v=2"></script>
+<script>
+(function () {
+  var origin = '$origin';
+  var proxyOrigin = '$proxyOrigin';
+
+  document.addEventListener('click', function (event) {
+    if (event.defaultPrevented) return;
+    if (event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    var el = event.target;
+    while (el && el.nodeName !== 'A') {
+      el = el.parentElement;
+    }
+    if (!el) return;
+    if (el.target === '_blank' || el.hasAttribute('download')) return;
+
+    var href = el.getAttribute('href');
+    if (!href || href.indexOf('javascript:') === 0 || href.indexOf('#') === 0) return;
+
+    var url;
+    try {
+      url = new URL(href, origin);
+    } catch (e) {
+      return;
+    }
+
+    if (url.origin === origin) {
+      var path = url.pathname;
+      var search = url.search || '';
+      if (path === '/' || /^\\/news\\//.test(path)) {
+        event.preventDefault();
+        var newUrl = proxyOrigin + path + search;
+        window.location.href = newUrl;
+      }
+    }
+  }, true);
+})();
+</script>
+HTML;
+
+if (stripos($html, '</body>') !== false) {
+    $html = preg_replace('#</body>#i', $proxyJs . "\n</body>", $html, 1);
+} else {
+    $html .= $proxyJs;
+}
+
+header('Content-Type: text/html; charset=utf-8');
+echo $html;
