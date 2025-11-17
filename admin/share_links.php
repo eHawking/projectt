@@ -598,7 +598,7 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
             <input type="text" name="slug" id="slug" value="<?= h($slug) ?>" placeholder="e.g. campaign1">
 
             <label for="title">Title (for WhatsApp / Open Graph)</label>
-            <input type="text" name="title" id="title" value="<?= h($title) ?>" required>
+            <input type="text" name="title" id="title" value="<?= h($title) ?>">
 
             <label for="description">Description (optional)</label>
             <textarea name="description" id="description" placeholder="Optional message shown under title."><?= h($description) ?></textarea>
