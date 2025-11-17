@@ -6,6 +6,104 @@ require_login();
 
 $pdo = db();
 
+function share_fetch_url_content(string $url): ?string
+{
+    $opts = [
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 5,
+        ],
+        'https' => [
+            'method' => 'GET',
+            'timeout' => 5,
+        ],
+    ];
+    $context = stream_context_create($opts);
+    $body = @file_get_contents($url, false, $context);
+    if ($body === false) {
+        return null;
+    }
+    return $body;
+}
+
+function share_extract_metadata(string $html): array
+{
+    $title = null;
+    $description = null;
+    $image = null;
+
+    if (preg_match('/<meta[^>]+property=["\']og:title["\'][^>]*content=["\']([^"\']+)["\']/i', $html, $m)) {
+        $title = trim($m[1]);
+    } elseif (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $m)) {
+        $title = trim(html_entity_decode(strip_tags($m[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    }
+
+    if (preg_match('/<meta[^>]+property=["\']og:description["\'][^>]*content=["\']([^"\']*)["\']/i', $html, $m)
+        || preg_match('/<meta[^>]+name=["\']description["\'][^>]*content=["\']([^"\']*)["\']/i', $html, $m)) {
+        $description = trim($m[1]);
+    }
+
+    if (preg_match('/<meta[^>]+property=["\']og:image["\'][^>]*content=["\']([^"\']+)["\']/i', $html, $m)) {
+        $image = trim($m[1]);
+    }
+
+    return [
+        'title' => $title,
+        'description' => $description,
+        'image' => $image,
+    ];
+}
+
+function share_download_remote_image(string $url, string $slug): ?string
+{
+    if (stripos($url, 'http://') !== 0 && stripos($url, 'https://') !== 0) {
+        return null;
+    }
+
+    $opts = [
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 8,
+        ],
+        'https' => [
+            'method' => 'GET',
+            'timeout' => 8,
+        ],
+    ];
+    $context = stream_context_create($opts);
+    $data = @file_get_contents($url, false, $context);
+    if ($data === false) {
+        return null;
+    }
+
+    if (strlen($data) > 5 * 1024 * 1024) {
+        return null;
+    }
+
+    $path = parse_url($url, PHP_URL_PATH) ?: '';
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    if ($ext === '' || !in_array($ext, $allowed, true)) {
+        $ext = 'jpg';
+    }
+
+    $uploadDir = dirname(__DIR__) . '/uploads/share';
+    if (!is_dir($uploadDir)) {
+        @mkdir($uploadDir, 0777, true);
+    }
+
+    $safeSlug = $slug !== '' ? $slug : 'auto';
+    $safeSlug = preg_replace('/[^A-Za-z0-9_-]/', '_', $safeSlug);
+    $fileName = 'share_' . $safeSlug . '_' . time() . '.' . $ext;
+    $destPath = $uploadDir . '/' . $fileName;
+
+    if (file_put_contents($destPath, $data) === false) {
+        return null;
+    }
+
+    return 'uploads/share/' . $fileName;
+}
+
 $errors = [];
 $success = '';
 
@@ -16,79 +114,116 @@ $targetUrl = trim($_POST['target_url'] ?? '');
 $isActive = $_SERVER['REQUEST_METHOD'] === 'POST'
     ? (isset($_POST['is_active']) ? 1 : 0)
     : 1;
+$remoteImageUrl = trim($_POST['remote_image_url'] ?? '');
+$action = $_POST['action'] ?? 'save';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if ($slug === '') {
-        $errors[] = 'Slug is required.';
-    } elseif (!preg_match('/^[A-Za-z0-9_-]+$/', $slug)) {
-        $errors[] = 'Slug may only contain letters, numbers, hyphen and underscore.';
-    }
-
-    if ($title === '') {
-        $errors[] = 'Title is required.';
-    }
-
-    if ($targetUrl === '') {
-        $errors[] = 'Target URL is required.';
-    }
-
-    $imagePath = null;
-
-    if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
-        if ($_FILES['image']['error'] === UPLOAD_ERR_OK) {
-            $tmpName = $_FILES['image']['tmp_name'];
-            $origName = $_FILES['image']['name'] ?? 'image';
-            $size = (int)($_FILES['image']['size'] ?? 0);
-
-            if ($size > 5 * 1024 * 1024) {
-                $errors[] = 'Image must be smaller than 5MB.';
+    if ($action === 'fetch') {
+        if ($targetUrl === '') {
+            $errors[] = 'Target URL is required to fetch metadata.';
+        } else {
+            $html = share_fetch_url_content($targetUrl);
+            if ($html === null) {
+                $errors[] = 'Could not fetch metadata from the target URL.';
             } else {
-                $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
-                $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-                if (!in_array($ext, $allowed, true)) {
-                    $errors[] = 'Image must be JPG, PNG, GIF or WEBP.';
-                } else {
-                    $uploadDir = dirname(__DIR__) . '/uploads/share';
-                    if (!is_dir($uploadDir)) {
-                        @mkdir($uploadDir, 0777, true);
-                    }
-                    $fileName = 'share_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $slug) . '_' . time() . '.' . $ext;
-                    $destPath = $uploadDir . '/' . $fileName;
-                    if (move_uploaded_file($tmpName, $destPath)) {
-                        $imagePath = 'uploads/share/' . $fileName;
-                    } else {
-                        $errors[] = 'Failed to save uploaded image.';
-                    }
+                $meta = share_extract_metadata($html);
+                if ($meta['title'] !== null && $title === '') {
+                    $title = $meta['title'];
+                }
+                if ($meta['description'] !== null && $description === '') {
+                    $description = $meta['description'];
+                }
+                if ($meta['image'] !== null) {
+                    $remoteImageUrl = $meta['image'];
+                }
+                if (!$errors) {
+                    $success = 'Metadata fetched. Review and adjust before saving.';
                 }
             }
-        } else {
-            $errors[] = 'Error during image upload.';
         }
-    }
+    } else {
+        if ($slug === '') {
+            $errors[] = 'Slug is required.';
+        } elseif (!preg_match('/^[A-Za-z0-9_-]+$/', $slug)) {
+            $errors[] = 'Slug may only contain letters, numbers, hyphen and underscore.';
+        }
 
-    if (!$errors) {
-        try {
-            $stmt = $pdo->prepare('INSERT INTO share_links (slug, title, description, image_path, target_url, is_active) VALUES (:slug, :title, :description, :image_path, :target_url, :is_active)');
-            $stmt->execute([
-                ':slug' => $slug,
-                ':title' => $title,
-                ':description' => $description !== '' ? $description : null,
-                ':image_path' => $imagePath,
-                ':target_url' => $targetUrl,
-                ':is_active' => $isActive,
-            ]);
+        if ($title === '') {
+            $errors[] = 'Title is required.';
+        }
 
-            $success = 'Share link created successfully.';
-            $slug = '';
-            $title = '';
-            $description = '';
-            $targetUrl = '';
-            $isActive = 1;
-        } catch (Throwable $e) {
-            if ((int)$e->getCode() === 23000) {
-                $errors[] = 'Slug already exists. Please choose another.';
+        if ($targetUrl === '') {
+            $errors[] = 'Target URL is required.';
+        }
+
+        $imagePath = null;
+
+        if ($remoteImageUrl !== '') {
+            $downloaded = share_download_remote_image($remoteImageUrl, $slug);
+            if ($downloaded !== null) {
+                $imagePath = $downloaded;
             } else {
-                $errors[] = 'Failed to save share link.';
+                $errors[] = 'Failed to download remote preview image.';
+            }
+        }
+
+        if ($imagePath === null && isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
+            if ($_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                $tmpName = $_FILES['image']['tmp_name'];
+                $origName = $_FILES['image']['name'] ?? 'image';
+                $size = (int)($_FILES['image']['size'] ?? 0);
+
+                if ($size > 5 * 1024 * 1024) {
+                    $errors[] = 'Image must be smaller than 5MB.';
+                } else {
+                    $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+                    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+                    if (!in_array($ext, $allowed, true)) {
+                        $errors[] = 'Image must be JPG, PNG, GIF or WEBP.';
+                    } else {
+                        $uploadDir = dirname(__DIR__) . '/uploads/share';
+                        if (!is_dir($uploadDir)) {
+                            @mkdir($uploadDir, 0777, true);
+                        }
+                        $fileName = 'share_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $slug) . '_' . time() . '.' . $ext;
+                        $destPath = $uploadDir . '/' . $fileName;
+                        if (move_uploaded_file($tmpName, $destPath)) {
+                            $imagePath = 'uploads/share/' . $fileName;
+                        } else {
+                            $errors[] = 'Failed to save uploaded image.';
+                        }
+                    }
+                }
+            } else {
+                $errors[] = 'Error during image upload.';
+            }
+        }
+
+        if (!$errors) {
+            try {
+                $stmt = $pdo->prepare('INSERT INTO share_links (slug, title, description, image_path, target_url, is_active) VALUES (:slug, :title, :description, :image_path, :target_url, :is_active)');
+                $stmt->execute([
+                    ':slug' => $slug,
+                    ':title' => $title,
+                    ':description' => $description !== '' ? $description : null,
+                    ':image_path' => $imagePath,
+                    ':target_url' => $targetUrl,
+                    ':is_active' => $isActive,
+                ]);
+
+                $success = 'Share link created successfully.';
+                $slug = '';
+                $title = '';
+                $description = '';
+                $targetUrl = '';
+                $remoteImageUrl = '';
+                $isActive = 1;
+            } catch (Throwable $e) {
+                if ((int)$e->getCode() === 23000) {
+                    $errors[] = 'Slug already exists. Please choose another.';
+                } else {
+                    $errors[] = 'Failed to save share link.';
+                }
             }
         }
     }
@@ -466,15 +601,31 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
             <label for="target_url">Target URL (where visitor goes after opening link)</label>
             <input type="url" name="target_url" id="target_url" value="<?= h($targetUrl) ?>" placeholder="https://www.dailysokalersomoy.com/news/123" required>
 
+            <input type="hidden" name="remote_image_url" id="remote_image_url" value="<?= h($remoteImageUrl) ?>">
+
             <label for="image">Preview image (JPG/PNG/GIF/WEBP, optional)</label>
             <input type="file" name="image" id="image" accept="image/*">
+
+            <?php if ($remoteImageUrl !== ''): ?>
+                <div class="field-inline" style="margin: 6px 0 10px 0;">
+                    <span>Fetched image:</span>
+                    <a href="<?= h($remoteImageUrl) ?>" target="_blank">Open</a>
+                </div>
+            <?php endif; ?>
 
             <div class="field-inline" style="margin-top: 6px; margin-bottom: 14px;">
                 <input type="checkbox" id="is_active" name="is_active" value="1" <?= $isActive ? 'checked' : '' ?>>
                 <label for="is_active" style="margin: 0;">Active</label>
             </div>
 
-            <button type="submit">Save share link</button>
+            <div class="field-inline" style="margin-top: 4px; gap: 10px;">
+                <button type="submit" name="action" value="fetch" style="background: #020b26; color: var(--text-main); border: 1px solid var(--border-subtle);">
+                    <i class="bi bi-magic icon-inline"></i>Fetch metadata
+                </button>
+                <button type="submit" name="action" value="save">
+                    <i class="bi bi-save icon-inline"></i>Save share link
+                </button>
+            </div>
         </form>
     </div>
 
