@@ -443,6 +443,21 @@ $currentQuery = http_build_query([
             margin-right: 4px;
         }
 
+        .theme-toggle .icon-light,
+        .theme-toggle .icon-dark {
+            margin-right: 6px;
+            font-size: 0.9rem;
+        }
+        .theme-toggle .icon-dark {
+            display: none;
+        }
+        :root[data-theme="dark"] .theme-toggle .icon-light {
+            display: none;
+        }
+        :root[data-theme="dark"] .theme-toggle .icon-dark {
+            display: inline-block;
+        }
+
         @media (max-width: 900px) {
             body {
                 padding-left: 0;
@@ -484,6 +499,8 @@ $currentQuery = http_build_query([
 </head>
 <body>
 <button type="button" class="theme-toggle" data-theme-toggle>
+    <i class="bi bi-brightness-high-fill icon-light"></i>
+    <i class="bi bi-moon-stars-fill icon-dark"></i>
     <span data-theme-toggle-label>Light</span> mode
 </button>
 <div class="sidebar">
@@ -495,7 +512,7 @@ $currentQuery = http_build_query([
     </nav>
     <div class="sidebar-user">
         <div>Logged in as <?= h($_SESSION['admin_username'] ?? 'admin') ?></div>
-        <a href="/admin/logout">Logout</a>
+        <a href="/admin/logout"><i class="bi bi-box-arrow-right icon-inline"></i>Logout</a>
     </div>
 </div>
 <header>
@@ -512,10 +529,10 @@ $currentQuery = http_build_query([
             <div class="card-value"><?= $todayVisits ?></div>
         </div>
         <div class="card">
-            <div class="card-title"><i class="bi bi-geo-alt icon-inline"></i>Top countries</div>
+            <div class="card-title"><i class="bi bi-flag-fill icon-inline"></i>Top countries</div>
             <ul class="top-list">
                 <?php foreach ($topCountries as $row): ?>
-                    <li><?= h($row['country'] ?? 'Unknown') ?> (<?= (int)$row['c'] ?>)</li>
+                    <li><i class="bi bi-flag icon-inline"></i><?= h($row['country'] ?? 'Unknown') ?> (<?= (int)$row['c'] ?>)</li>
                 <?php endforeach; ?>
                 <?php if (!$topCountries): ?>
                     <li>–</li>
@@ -568,10 +585,10 @@ $currentQuery = http_build_query([
                 <th><input type="checkbox" id="select-all"></th>
                 <th>Date</th>
                 <th>IP</th>
-                <th>Country/City</th>
+                <th><i class="bi bi-flag icon-inline"></i>Country/City</th>
                 <th>Browser</th>
                 <th>OS</th>
-                <th>Device</th>
+                <th><i class="bi bi-phone icon-inline"></i>Device</th>
                 <th>VPN?</th>
                 <th>Duration</th>
                 <th>Visits</th>
@@ -659,7 +676,7 @@ $currentQuery = http_build_query([
                         </div>
                     </div>
                     <div class="record-row">
-                        <div class="record-label">Country/City</div>
+                        <div class="record-label"><i class="bi bi-flag icon-inline"></i>Country/City</div>
                         <div class="record-value"><?= h(trim(($v['country'] ?? '') . ' / ' . ($v['city'] ?? ''), ' /')) ?></div>
                     </div>
                     <div class="record-row">
@@ -671,7 +688,7 @@ $currentQuery = http_build_query([
                         <div class="record-value"><?= h($v['os_name'] ?? '') ?></div>
                     </div>
                     <div class="record-row">
-                        <div class="record-label">Device</div>
+                        <div class="record-label"><i class="bi bi-phone icon-inline"></i>Device</div>
                         <div class="record-value"><?= h($v['device_type'] ?? '') ?></div>
                     </div>
                     <div class="record-row">
@@ -693,7 +710,7 @@ $currentQuery = http_build_query([
                     <?php if ($mapUrl !== ''): ?>
                         <div class="record-row">
                             <div class="record-label">Map</div>
-                            <div class="record-value"><a href="<?= h($mapUrl) ?>" target="_blank">Open</a></div>
+                            <div class="record-value"><a href="<?= h($mapUrl) ?>" target="_blank"><i class="bi bi-geo-alt icon-inline"></i>Open</a></div>
                         </div>
                     <?php endif; ?>
                 </div>
