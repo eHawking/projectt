@@ -82,25 +82,25 @@ if ($targetUrl !== null) {
 
     <style>
         :root {
-            /* Light theme (default) */
-            --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 45%, #f3f4f6 100%);
-            --card-bg: #ffffff;
-            --accent: #22c55e;
-            --accent-soft: rgba(34, 197, 94, 0.12);
-            --text-main: #0f172a;
-            --text-muted: #6b7280;
-            --border-subtle: rgba(148, 163, 184, 0.25);
+            /* Light theme (default) – dark navy CRM style */
+            --bg-gradient: linear-gradient(135deg, #051637 0%, #020817 40%, #020314 100%);
+            --card-bg: #071a35;
+            --accent: #fb7185; /* neon pink */
+            --accent-soft: rgba(251, 113, 133, 0.2);
+            --text-main: #e5e7eb;
+            --text-muted: #94a3b8;
+            --border-subtle: rgba(15, 23, 42, 0.85);
         }
 
         :root[data-theme="dark"] {
-            /* Dark theme */
-            --bg-gradient: radial-gradient(circle at top left, #1e293b 0, #020617 45%, #020617 100%);
-            --card-bg: rgba(15, 23, 42, 0.96);
-            --accent: #22c55e;
-            --accent-soft: rgba(34, 197, 94, 0.16);
+            /* Dark theme – slightly deeper variant */
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #020012 40%, #000000 100%);
+            --card-bg: #061327;
+            --accent: #fb7185;
+            --accent-soft: rgba(251, 113, 133, 0.26);
             --text-main: #e5e7eb;
             --text-muted: #9ca3af;
-            --border-subtle: rgba(148, 163, 184, 0.25);
+            --border-subtle: rgba(15, 23, 42, 0.9);
         }
 
         * {
@@ -123,11 +123,11 @@ if ($targetUrl !== null) {
             width: 100%;
             max-width: 520px;
             background: var(--card-bg);
-            border-radius: 18px;
+            border-radius: 22px;
             padding: 24px 22px 26px;
             box-shadow:
-                0 18px 60px rgba(15, 23, 42, 0.85),
-                0 0 0 1px rgba(148, 163, 184, 0.25);
+                0 22px 80px rgba(15, 23, 42, 1),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
             position: relative;
             overflow: hidden;
         }
@@ -136,7 +136,7 @@ if ($targetUrl !== null) {
             content: '';
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 55%);
+            background: radial-gradient(circle at top right, rgba(251, 113, 133, 0.22), transparent 55%);
             pointer-events: none;
         }
 
@@ -169,8 +169,8 @@ if ($targetUrl !== null) {
             gap: 6px;
             padding: 4px 10px;
             border-radius: 999px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: #020b26;
+            border: 1px solid rgba(15, 23, 42, 0.9);
             font-size: 0.75rem;
             color: var(--text-muted);
             margin-bottom: 14px;
@@ -181,7 +181,7 @@ if ($targetUrl !== null) {
             height: 7px;
             border-radius: 999px;
             background: var(--accent);
-            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+            box-shadow: 0 0 0 4px var(--accent-soft);
         }
 
         h1 {
@@ -200,11 +200,11 @@ if ($targetUrl !== null) {
         .banner {
             margin-top: 20px;
             padding: 14px 14px 16px;
-            background: rgba(15, 23, 42, 0.9);
+            background: #020b26;
             border-radius: 12px;
             font-size: 0.9rem;
             text-align: left;
-            border: 1px solid rgba(148, 163, 184, 0.45);
+            border: 1px solid rgba(15, 23, 42, 0.9);
         }
 
         .banner p {
@@ -257,9 +257,9 @@ if ($targetUrl !== null) {
         }
 
         #btn-no-location {
-            background: rgba(15, 23, 42, 0.9);
+            background: #020b26;
             color: var(--text-main);
-            border: 1px solid rgba(148, 163, 184, 0.4);
+            border: 1px solid rgba(15, 23, 42, 0.9);
         }
 
         #btn-no-location:hover {
@@ -284,6 +284,9 @@ if ($targetUrl !== null) {
         @media (max-width: 480px) {
             .page {
                 padding: 20px 16px 22px;
+            }
+            h1 {
+                font-size: 1.4rem;
             }
         }
     </style>

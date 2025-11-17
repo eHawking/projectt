@@ -39,27 +39,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            /* Light theme (default) */
-            --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 40%, #f3f4f6 100%);
-            --card-bg: #ffffff;
-            --accent: #22c55e;
-            --accent-strong: #16a34a;
-            --text-main: #0f172a;
-            --text-muted: #6b7280;
-            --border-subtle: rgba(148, 163, 184, 0.35);
-            --field-bg: #f9fafb;
+            /* Light theme (default) – dark navy CRM style */
+            --bg-gradient: linear-gradient(135deg, #051637 0%, #020817 40%, #020314 100%);
+            --card-bg: #071a35;
+            --accent: #fb7185; /* neon pink */
+            --accent-strong: #fb82a0;
+            --text-main: #e5e7eb;
+            --text-muted: #94a3b8;
+            --border-subtle: rgba(15, 23, 42, 0.85);
+            --field-bg: #020b26;
         }
 
         :root[data-theme="dark"] {
-            /* Dark theme */
-            --bg-gradient: radial-gradient(circle at top left, #111827 0, #020617 40%, #020617 100%);
-            --card-bg: rgba(15, 23, 42, 0.96);
-            --accent: #22c55e;
-            --accent-strong: #16a34a;
+            /* Dark theme – slightly deeper variant */
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #020012 40%, #000000 100%);
+            --card-bg: #061327;
+            --accent: #fb7185;
+            --accent-strong: #fb82a0;
             --text-main: #e5e7eb;
             --text-muted: #9ca3af;
-            --border-subtle: rgba(148, 163, 184, 0.35);
-            --field-bg: rgba(15, 23, 42, 0.9);
+            --border-subtle: rgba(15, 23, 42, 0.9);
+            --field-bg: #020617;
         }
 
         * {
@@ -83,10 +83,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-width: 380px;
             background: var(--card-bg);
             padding: 26px 22px 28px;
-            border-radius: 18px;
+            border-radius: 22px;
             box-shadow:
-                0 18px 60px rgba(15, 23, 42, 0.85),
-                0 0 0 1px rgba(148, 163, 184, 0.35);
+                0 22px 80px rgba(15, 23, 42, 1),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
         }
 
         h1 {
@@ -176,6 +176,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .theme-toggle span {
             font-weight: 500;
             margin-right: 4px;
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 22px 18px 24px;
+            }
         }
     </style>
 </head>

@@ -81,35 +81,35 @@ $currentQuery = http_build_query([
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            /* Light theme (default) */
-            --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 45%, #f3f4f6 100%);
-            --header-bg: #ffffff;
-            --header-fg: #0f172a;
-            --card-bg: #ffffff;
-            --card-elevated: #f9fafb;
-            --accent: #22c55e;
-            --accent-soft: rgba(34, 197, 94, 0.12);
-            --border-subtle: rgba(148, 163, 184, 0.35);
-            --text-main: #0f172a;
-            --text-muted: #6b7280;
-            --field-bg: #f9fafb;
-            --table-row-alt-bg: #f9fafb;
+            /* Light theme (default) – dark navy CRM style */
+            --bg-gradient: linear-gradient(135deg, #051637 0%, #020817 40%, #020314 100%);
+            --header-bg: #051327;
+            --header-fg: #f9fafb;
+            --card-bg: #071a35;
+            --card-elevated: #071f3f;
+            --accent: #fb7185; /* neon pink */
+            --accent-soft: rgba(251, 113, 133, 0.18);
+            --border-subtle: rgba(15, 23, 42, 0.85);
+            --text-main: #e5e7eb;
+            --text-muted: #94a3b8;
+            --field-bg: #020b26;
+            --table-row-alt-bg: #051426;
         }
 
         :root[data-theme="dark"] {
-            /* Dark theme */
-            --bg-gradient: radial-gradient(circle at top left, #020617 0, #020617 50%, #000000 100%);
-            --header-bg: rgba(15, 23, 42, 0.98);
-            --header-fg: #e5e7eb;
-            --card-bg: rgba(15, 23, 42, 0.96);
-            --card-elevated: rgba(15, 23, 42, 0.98);
-            --accent: #22c55e;
-            --accent-soft: rgba(34, 197, 94, 0.15);
-            --border-subtle: rgba(148, 163, 184, 0.35);
+            /* Dark theme – slightly deeper variant */
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #020012 40%, #000000 100%);
+            --header-bg: #030b1e;
+            --header-fg: #f9fafb;
+            --card-bg: #061327;
+            --card-elevated: #050f22;
+            --accent: #fb7185;
+            --accent-soft: rgba(251, 113, 133, 0.24);
+            --border-subtle: rgba(15, 23, 42, 0.9);
             --text-main: #e5e7eb;
             --text-muted: #9ca3af;
-            --field-bg: rgba(15, 23, 42, 0.9);
-            --table-row-alt-bg: rgba(15, 23, 42, 0.9);
+            --field-bg: #020617;
+            --table-row-alt-bg: #050b18;
         }
 
         * {
@@ -155,11 +155,11 @@ $currentQuery = http_build_query([
         .card {
             flex: 1 1 200px;
             background: var(--card-bg);
-            border-radius: 14px;
-            padding: 10px 12px;
+            border-radius: 18px;
+            padding: 12px 14px;
             box-shadow:
-                0 14px 40px rgba(15, 23, 42, 0.7),
-                0 0 0 1px rgba(148, 163, 184, 0.35);
+                0 18px 60px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
         }
         .card-title {
             font-size: 0.82rem;
@@ -215,11 +215,11 @@ $currentQuery = http_build_query([
             width: 100%;
             border-collapse: collapse;
             background: var(--card-bg);
-            border-radius: 14px;
+            border-radius: 18px;
             overflow: hidden;
             box-shadow:
-                0 14px 40px rgba(15, 23, 42, 0.7),
-                0 0 0 1px rgba(148, 163, 184, 0.35);
+                0 18px 60px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
             font-size: 0.85rem;
         }
         th, td {
@@ -300,6 +300,33 @@ $currentQuery = http_build_query([
         .theme-toggle span {
             font-weight: 500;
             margin-right: 4px;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                padding: 0 12px 24px;
+            }
+            .cards {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .filters {
+                overflow-x: auto;
+            }
+            table {
+                font-size: 0.78rem;
+            }
+            th, td {
+                padding: 6px 8px;
+                white-space: nowrap;
+            }
         }
     </style>
 </head>
