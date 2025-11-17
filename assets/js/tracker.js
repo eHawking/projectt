@@ -6,7 +6,7 @@
   var durationSent = false;
 
   function post(data) {
-    return fetch('track.php', {
+    return fetch('/track.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -53,9 +53,9 @@
     try {
       if (navigator.sendBeacon) {
         var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-        navigator.sendBeacon('track.php', blob);
+        navigator.sendBeacon('/track.php', blob);
       } else {
-        fetch('track.php', {
+        fetch('/track.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),

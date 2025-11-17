@@ -31,6 +31,7 @@ declare(strict_types=1);
 <div class="frame-wrapper">
     <iframe src="https://dailysokalersomoy.com" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
 </div>
+<script src="/assets/js/tracker.js"></script>
 </body>
 </html>
 
