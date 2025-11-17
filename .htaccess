@@ -8,8 +8,8 @@ RewriteRule ^ - [L]
 # Legacy landing URL – redirect to homepage
 RewriteRule ^landing/?$ / [L,R=302]
 
-# Any news article mapped to index (proxy the .com article)
-RewriteRule ^news/([0-9]+)/?$ index.php [L,QSA]
+# Any news article mapped to landing (for WhatsApp preview and tracking)
+RewriteRule ^news/([0-9]+)/?$ landing.php [L,QSA]
 
 # Public share links mapped to landing
 RewriteRule ^share/([A-Za-z0-9_-]+)/?$ landing.php [L,QSA]

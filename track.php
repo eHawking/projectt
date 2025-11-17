@@ -72,6 +72,18 @@ $sh = isset($data['screen_height']) ? (int)$data['screen_height'] : null;
 $uaInfo = parse_ua($ua);
 $geo = geo_ip($ip);
 
+$vpnSuspected = false;
+$ispLower = strtolower((string)($geo['isp'] ?? ''));
+if ($ispLower !== '') {
+    $vpnKeywords = ['vpn', 'proxy', 'hosting', 'data center', 'datacenter', 'colo', 'digitalocean', 'ovh', 'm247'];
+    foreach ($vpnKeywords as $kw) {
+        if (strpos($ispLower, $kw) !== false) {
+            $vpnSuspected = true;
+            break;
+        }
+    }
+}
+
 if ($lat === null && isset($geo['latitude'])) {
     $lat = $geo['latitude'];
 }
@@ -133,7 +145,7 @@ try {
     ]);
 
     $id = (int)$pdo->lastInsertId();
-    echo json_encode(['ok' => true, 'id' => $id]);
+    echo json_encode(['ok' => true, 'id' => $id, 'vpn_suspected' => $vpnSuspected]);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'insert_failed']);
