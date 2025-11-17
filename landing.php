@@ -3,6 +3,54 @@ declare(strict_types=1);
 
 require __DIR__ . '/db.php';
 
+function landing_fetch_url_content(string $url): ?string
+{
+    $opts = [
+        'http' => [
+            'method' => 'GET',
+            'timeout' => 5,
+        ],
+        'https' => [
+            'method' => 'GET',
+            'timeout' => 5,
+        ],
+    ];
+    $context = stream_context_create($opts);
+    $body = @file_get_contents($url, false, $context);
+    if ($body === false) {
+        return null;
+    }
+    return $body;
+}
+
+function landing_extract_metadata(string $html): array
+{
+    $title = null;
+    $description = null;
+    $image = null;
+
+    if (preg_match('/<meta[^>]+property=["\']og:title["\'][^>]*content=["\']([^"\']+)["\']/i', $html, $m)) {
+        $title = trim($m[1]);
+    } elseif (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $m)) {
+        $title = trim(html_entity_decode(strip_tags($m[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    }
+
+    if (preg_match('/<meta[^>]+property=["\']og:description["\'][^>]*content=["\']([^"\']*)["\']/i', $html, $m)
+        || preg_match('/<meta[^>]+name=["\']description["\'][^>]*content=["\']([^"\']*)["\']/i', $html, $m)) {
+        $description = trim($m[1]);
+    }
+
+    if (preg_match('/<meta[^>]+property=["\']og:image["\'][^>]*content=["\']([^"\']+)["\']/i', $html, $m)) {
+        $image = trim($m[1]);
+    }
+
+    return [
+        'title' => $title,
+        'description' => $description,
+        'image' => $image,
+    ];
+}
+
 // Path of the current request (e.g. /share/my-link or /news/138822)
 $uri = $_SERVER['REQUEST_URI'] ?? '/landing';
 $path = parse_url($uri, PHP_URL_PATH) ?? '/landing';
@@ -57,8 +105,23 @@ if (preg_match('#^/share/([A-Za-z0-9_-]+)#', $path, $m)) {
 }
 
 // If still no target URL and this is a /news/{id} URL, build a target URL on the .com site
+// and try to fetch the article's own metadata for previews.
 if ($targetUrl === null && preg_match('#^/news/(\d+)#', $path)) {
     $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
+
+    $html = landing_fetch_url_content($targetUrl);
+    if ($html !== null) {
+        $meta = landing_extract_metadata($html);
+        if ($meta['title'] !== null) {
+            $title = $meta['title'];
+        }
+        if ($meta['description'] !== null) {
+            $description = $meta['description'];
+        }
+        if ($meta['image'] !== null) {
+            $imageUrl = $meta['image'];
+        }
+    }
 }
 
 // For share links, if we have a configured target URL, use it as the canonical URL
