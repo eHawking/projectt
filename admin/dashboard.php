@@ -79,6 +79,7 @@ $currentQuery = http_build_query([
     <meta charset="utf-8">
     <title>Admin Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         :root {
             /* Light theme (default) – dark navy CRM style */
@@ -114,6 +115,12 @@ $currentQuery = http_build_query([
 
         * {
             box-sizing: border-box;
+        }
+
+        .icon-inline {
+            margin-right: 6px;
+            font-size: 1rem;
+            vertical-align: -0.1em;
         }
 
         body {
@@ -432,8 +439,8 @@ $currentQuery = http_build_query([
     <div class="sidebar-logo-main">DS Analytics</div>
     <div class="sidebar-logo-sub">Admin panel</div>
     <nav class="sidebar-nav">
-        <a href="/admin/dashboard" class="sidebar-link sidebar-link-active">Dashboard</a>
-        <a href="/admin/share_links" class="sidebar-link">Share links</a>
+        <a href="/admin/dashboard" class="sidebar-link sidebar-link-active"><i class="bi bi-speedometer2 icon-inline"></i>Dashboard</a>
+        <a href="/admin/share_links" class="sidebar-link"><i class="bi bi-link-45deg icon-inline"></i>Share links</a>
     </nav>
     <div class="sidebar-user">
         <div>Logged in as <?= h($_SESSION['admin_username'] ?? 'admin') ?></div>
@@ -441,20 +448,20 @@ $currentQuery = http_build_query([
     </div>
 </div>
 <header>
-    <h1>Tracking Dashboard</h1>
+    <h1><i class="bi bi-graph-up-arrow icon-inline"></i>Tracking Dashboard</h1>
 </header>
 <div class="container">
     <div class="cards">
         <div class="card">
-            <div class="card-title">Total visits</div>
+            <div class="card-title"><i class="bi bi-people icon-inline"></i>Total visits</div>
             <div class="card-value"><?= $totalVisits ?></div>
         </div>
         <div class="card">
-            <div class="card-title">Visits today</div>
+            <div class="card-title"><i class="bi bi-sun icon-inline"></i>Visits today</div>
             <div class="card-value"><?= $todayVisits ?></div>
         </div>
         <div class="card">
-            <div class="card-title">Top countries</div>
+            <div class="card-title"><i class="bi bi-geo-alt icon-inline"></i>Top countries</div>
             <ul class="top-list">
                 <?php foreach ($topCountries as $row): ?>
                     <li><?= h($row['country'] ?? 'Unknown') ?> (<?= (int)$row['c'] ?>)</li>
@@ -465,7 +472,7 @@ $currentQuery = http_build_query([
             </ul>
         </div>
         <div class="card">
-            <div class="card-title">Devices</div>
+            <div class="card-title"><i class="bi bi-phone-laptop icon-inline"></i>Devices</div>
             <ul class="top-list">
                 <?php foreach ($topDevices as $row): ?>
                     <li><?= h($row['device_type'] ?? 'Unknown') ?> (<?= (int)$row['c'] ?>)</li>
@@ -585,9 +592,9 @@ $currentQuery = http_build_query([
     </script>
 </div>
 <div class="bottom-nav">
-    <a href="/admin/dashboard" class="bottom-nav-link bottom-nav-link-active">Dashboard</a>
-    <a href="/admin/share_links" class="bottom-nav-link">Share</a>
-    <a href="/admin/logout" class="bottom-nav-link">Logout</a>
+    <a href="/admin/dashboard" class="bottom-nav-link bottom-nav-link-active"><i class="bi bi-speedometer2"></i></a>
+    <a href="/admin/share_links" class="bottom-nav-link"><i class="bi bi-link-45deg"></i></a>
+    <a href="/admin/logout" class="bottom-nav-link"><i class="bi bi-box-arrow-right"></i></a>
 </div>
 </body>
 </html>

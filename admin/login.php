@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="utf-8">
     <title>Admin Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         :root {
             /* Light theme (default) – dark navy CRM style */
@@ -64,6 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         * {
             box-sizing: border-box;
+        }
+
+        .icon-inline {
+            margin-right: 6px;
+            font-size: 1rem;
+            vertical-align: -0.1em;
         }
 
         body {
@@ -190,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <span data-theme-toggle-label>Light</span> mode
 </button>
 <div class="login-box">
-    <h1>Admin Login</h1>
+    <h1><i class="bi bi-shield-lock-fill icon-inline"></i>Admin Login</h1>
     <p class="sub">Sign in to view your visitor analytics dashboard.</p>
     <?php if ($error !== ''): ?>
         <div class="error"><?= h($error) ?></div>

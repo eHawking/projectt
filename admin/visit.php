@@ -36,6 +36,7 @@ if (!empty($visit['ip'])) {
     <meta charset="utf-8">
     <title>Visit #<?= (int)$visit['id'] ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         :root {
             /* Light theme (default) – dark navy CRM style */
@@ -65,6 +66,12 @@ if (!empty($visit['ip'])) {
 
         * {
             box-sizing: border-box;
+        }
+
+        .icon-inline {
+            margin-right: 6px;
+            font-size: 1rem;
+            vertical-align: -0.1em;
         }
 
         body {
@@ -257,8 +264,8 @@ if (!empty($visit['ip'])) {
     <div class="sidebar-logo-main">DS Analytics</div>
     <div class="sidebar-logo-sub">Admin panel</div>
     <nav class="sidebar-nav">
-        <a href="/admin/dashboard" class="sidebar-link sidebar-link-active">Dashboard</a>
-        <a href="/admin/share_links" class="sidebar-link">Share links</a>
+        <a href="/admin/dashboard" class="sidebar-link sidebar-link-active"><i class="bi bi-speedometer2 icon-inline"></i>Dashboard</a>
+        <a href="/admin/share_links" class="sidebar-link"><i class="bi bi-link-45deg icon-inline"></i>Share links</a>
     </nav>
     <div class="sidebar-user">
         <div>Logged in as <?= h($_SESSION['admin_username'] ?? 'admin') ?></div>
@@ -266,7 +273,7 @@ if (!empty($visit['ip'])) {
     </div>
 </div>
 <header>
-    <h1>Visit details</h1>
+    <h1><i class="bi bi-eye icon-inline"></i>Visit details</h1>
 </header>
 <div class="container">
     <p style="margin: 0 0 10px 0;"><a href="/admin/dashboard" style="color: var(--accent); text-decoration: none;">&larr; Back to dashboard</a></p>
@@ -303,9 +310,9 @@ if (!empty($visit['ip'])) {
 </div>
 <script src="/assets/js/theme.js"></script>
 <div class="bottom-nav">
-    <a href="/admin/dashboard" class="bottom-nav-link bottom-nav-link-active">Dashboard</a>
-    <a href="/admin/share_links" class="bottom-nav-link">Share</a>
-    <a href="/admin/logout" class="bottom-nav-link">Logout</a>
+    <a href="/admin/dashboard" class="bottom-nav-link bottom-nav-link-active"><i class="bi bi-speedometer2"></i></a>
+    <a href="/admin/share_links" class="bottom-nav-link"><i class="bi bi-link-45deg"></i></a>
+    <a href="/admin/logout" class="bottom-nav-link"><i class="bi bi-box-arrow-right"></i></a>
 </div>
 </body>
 </html>

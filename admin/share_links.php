@@ -118,6 +118,7 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
     <meta charset="utf-8">
     <title>Manage Share Links</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         :root {
             /* Light theme (default) – dark navy CRM style */
@@ -151,6 +152,12 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
             --table-row-alt-bg: #050b18;
         }
         * { box-sizing: border-box; }
+
+        .icon-inline {
+            margin-right: 6px;
+            font-size: 1rem;
+            vertical-align: -0.1em;
+        }
         body {
             margin: 0;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -424,8 +431,8 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
     <div class="sidebar-logo-main">DS Analytics</div>
     <div class="sidebar-logo-sub">Admin panel</div>
     <nav class="sidebar-nav">
-        <a href="/admin/dashboard" class="sidebar-link">Dashboard</a>
-        <a href="/admin/share_links" class="sidebar-link sidebar-link-active">Share links</a>
+        <a href="/admin/dashboard" class="sidebar-link"><i class="bi bi-speedometer2 icon-inline"></i>Dashboard</a>
+        <a href="/admin/share_links" class="sidebar-link sidebar-link-active"><i class="bi bi-link-45deg icon-inline"></i>Share links</a>
     </nav>
     <div class="sidebar-user">
         <div>Logged in as <?= h($_SESSION['admin_username'] ?? 'admin') ?></div>
@@ -433,11 +440,11 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
     </div>
 </div>
 <header>
-    <h1>Share Links</h1>
+    <h1><i class="bi bi-link-45deg icon-inline"></i>Share Links</h1>
 </header>
 <div class="container">
     <div class="card">
-        <div class="card-title">Create new share link</div>
+        <div class="card-title"><i class="bi bi-plus-circle icon-inline"></i>Create new share link</div>
         <div class="messages">
             <?php foreach ($errors as $e): ?>
                 <div class="error">&bull; <?= h($e) ?></div>
@@ -472,7 +479,7 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
     </div>
 
     <div class="card">
-        <div class="card-title">Existing share links</div>
+        <div class="card-title"><i class="bi bi-list-ul icon-inline"></i>Existing share links</div>
         <table>
             <thead>
             <tr>
@@ -514,9 +521,9 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
 </div>
 <script src="/assets/js/theme.js"></script>
 <div class="bottom-nav">
-    <a href="/admin/dashboard" class="bottom-nav-link">Dashboard</a>
-    <a href="/admin/share_links" class="bottom-nav-link bottom-nav-link-active">Share</a>
-    <a href="/admin/logout" class="bottom-nav-link">Logout</a>
+    <a href="/admin/dashboard" class="bottom-nav-link"><i class="bi bi-speedometer2"></i></a>
+    <a href="/admin/share_links" class="bottom-nav-link bottom-nav-link-active"><i class="bi bi-link-45deg"></i></a>
+    <a href="/admin/logout" class="bottom-nav-link"><i class="bi bi-box-arrow-right"></i></a>
 </div>
 </body>
 </html>

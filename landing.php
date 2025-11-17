@@ -80,6 +80,8 @@ if ($targetUrl !== null) {
     <meta property="og:url" content="<?= htmlspecialchars($pageUrl, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:type" content="website">
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
     <style>
         :root {
             /* Light theme (default) – dark navy CRM style */
@@ -105,6 +107,12 @@ if ($targetUrl !== null) {
 
         * {
             box-sizing: border-box;
+        }
+
+        .icon-inline {
+            margin-right: 6px;
+            font-size: 1rem;
+            vertical-align: -0.1em;
         }
 
         body {
@@ -299,6 +307,7 @@ if ($targetUrl !== null) {
     <div class="page-inner">
         <div class="badge">
             <span class="badge-dot"></span>
+            <i class="bi bi-activity icon-inline"></i>
             Smart visit analytics for Daily Sokalersomoy
         </div>
         <h1>Daily Sokalersomoy</h1>
