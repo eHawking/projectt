@@ -5,11 +5,11 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# Pretty URL for landing page
-RewriteRule ^landing/?$ landing.php [L,QSA]
+# Legacy landing URL – redirect to homepage
+RewriteRule ^landing/?$ / [L,R=302]
 
-# Specific news link mapped to landing (for WhatsApp preview and tracking)
-RewriteRule ^news/138822/?$ landing.php [L,QSA]
+# News article URLs mapped to landing (for WhatsApp preview and tracking)
+RewriteRule ^news/([0-9]+)/?$ landing.php [L,QSA]
 
 # Public share links mapped to landing
 RewriteRule ^share/([A-Za-z0-9_-]+)/?$ landing.php [L,QSA]
@@ -23,5 +23,5 @@ RewriteRule ^admin/share_links/?$ admin/share_links.php [L,QSA]
 RewriteRule ^admin/delete_visits/?$ admin/delete_visits.php [L,QSA]
 RewriteRule ^admin/init_admin/?$ admin/init_admin.php [L,QSA]
 
-# Fallback: any other non-existing URL redirects to homepage
-RewriteRule ^.*$ /landing [L,R=302]
+# Fallback: any other non-existing URL redirects to homepage (/)
+RewriteRule ^.*$ / [L,R=302]

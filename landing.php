@@ -3,6 +3,53 @@ declare(strict_types=1);
 
 require __DIR__ . '/db.php';
 
+function fetch_og_metadata(string $url): array
+{
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 3,
+            'follow_location' => 1,
+        ],
+    ]);
+    $html = @file_get_contents($url, false, $context);
+    if ($html === false) {
+        return [];
+    }
+    $result = [];
+    $doc = new DOMDocument();
+    if (@$doc->loadHTML($html) === false) {
+        return [];
+    }
+    $xpath = new DOMXPath($doc);
+    $nodes = $xpath->query('//meta[@property="og:title" or @property="og:description" or @property="og:image"]');
+    if ($nodes !== false) {
+        foreach ($nodes as $node) {
+            $property = $node->getAttribute('property');
+            $content = $node->getAttribute('content');
+            if ($content === '') {
+                continue;
+            }
+            if ($property === 'og:title') {
+                $result['title'] = html_entity_decode($content, ENT_QUOTES, 'UTF-8');
+            } elseif ($property === 'og:description') {
+                $result['description'] = html_entity_decode($content, ENT_QUOTES, 'UTF-8');
+            } elseif ($property === 'og:image') {
+                $result['image'] = $content;
+            }
+        }
+    }
+    if (!isset($result['title'])) {
+        $titles = $doc->getElementsByTagName('title');
+        if ($titles->length > 0) {
+            $text = trim($titles->item(0)->textContent);
+            if ($text !== '') {
+                $result['title'] = $text;
+            }
+        }
+    }
+    return $result;
+}
+
 // Path of the current request (e.g. /share/my-link or /news/138822)
 $uri = $_SERVER['REQUEST_URI'] ?? '/landing';
 $path = parse_url($uri, PHP_URL_PATH) ?? '/landing';
@@ -57,8 +104,48 @@ if (preg_match('#^/share/([A-Za-z0-9_-]+)#', $path, $m)) {
 }
 
 // If still no target URL and this is a /news/{id} URL, build a target URL on the .com site
-if ($targetUrl === null && preg_match('#^/news/(\d+)#', $path)) {
-    $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
+if (preg_match('#^/news/(\d+)#', $path)) {
+    if ($targetUrl === null) {
+        $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
+    }
+    $manualMeta = null;
+    try {
+        $stmtNews = $pdo->prepare('SELECT title, description, image_path FROM share_links WHERE target_url = :target AND is_active = 1 LIMIT 1');
+        $stmtNews->execute([':target' => $targetUrl]);
+        $manualMeta = $stmtNews->fetch();
+    } catch (Throwable $e) {
+        $manualMeta = false;
+    }
+    if ($manualMeta && is_array($manualMeta)) {
+        if (!empty($manualMeta['title'])) {
+            $title = (string)$manualMeta['title'];
+        }
+        if ($manualMeta['description'] !== null && $manualMeta['description'] !== '') {
+            $description = (string)$manualMeta['description'];
+        }
+        if (!empty($manualMeta['image_path'])) {
+            $img = (string)$manualMeta['image_path'];
+            if (strpos($img, 'http://') === 0 || strpos($img, 'https://') === 0) {
+                $imageUrl = $img;
+            } else {
+                if ($img[0] !== '/') {
+                    $img = '/' . $img;
+                }
+                $imageUrl = BASE_URL . $img;
+            }
+        }
+    } else {
+        $og = fetch_og_metadata($targetUrl);
+        if (isset($og['title']) && $og['title'] !== '') {
+            $title = $og['title'];
+        }
+        if (isset($og['description']) && $og['description'] !== '') {
+            $description = $og['description'];
+        }
+        if (isset($og['image']) && $og['image'] !== '') {
+            $imageUrl = $og['image'];
+        }
+    }
 }
 
 // For share links, if we have a configured target URL, use it as the canonical URL
