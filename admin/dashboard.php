@@ -84,6 +84,7 @@ $currentQuery = http_build_query([
             /* Light theme (default) */
             --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 45%, #f3f4f6 100%);
             --header-bg: #ffffff;
+            --header-fg: #0f172a;
             --card-bg: #ffffff;
             --card-elevated: #f9fafb;
             --accent: #22c55e;
@@ -91,12 +92,15 @@ $currentQuery = http_build_query([
             --border-subtle: rgba(148, 163, 184, 0.35);
             --text-main: #0f172a;
             --text-muted: #6b7280;
+            --field-bg: #f9fafb;
+            --table-row-alt-bg: #f9fafb;
         }
 
         :root[data-theme="dark"] {
             /* Dark theme */
             --bg-gradient: radial-gradient(circle at top left, #020617 0, #020617 50%, #000000 100%);
             --header-bg: rgba(15, 23, 42, 0.98);
+            --header-fg: #e5e7eb;
             --card-bg: rgba(15, 23, 42, 0.96);
             --card-elevated: rgba(15, 23, 42, 0.98);
             --accent: #22c55e;
@@ -104,6 +108,8 @@ $currentQuery = http_build_query([
             --border-subtle: rgba(148, 163, 184, 0.35);
             --text-main: #e5e7eb;
             --text-muted: #9ca3af;
+            --field-bg: rgba(15, 23, 42, 0.9);
+            --table-row-alt-bg: rgba(15, 23, 42, 0.9);
         }
 
         * {
@@ -118,7 +124,7 @@ $currentQuery = http_build_query([
         }
         header {
             background: var(--header-bg);
-            color: #e5e7eb;
+            color: var(--header-fg);
             padding: 12px 20px;
             display: flex;
             justify-content: space-between;
@@ -131,7 +137,7 @@ $currentQuery = http_build_query([
             letter-spacing: -0.02em;
         }
         header a {
-            color: #e5e7eb;
+            color: var(--header-fg);
             text-decoration: none;
             font-size: 0.9rem;
         }
@@ -184,7 +190,7 @@ $currentQuery = http_build_query([
         .filters select {
             margin-right: 8px;
             margin-bottom: 4px;
-            background: rgba(15, 23, 42, 0.9);
+            background: var(--field-bg);
             border-radius: 8px;
             border: 1px solid var(--border-subtle);
             color: var(--text-main);
@@ -227,7 +233,7 @@ $currentQuery = http_build_query([
             color: var(--text-muted);
         }
         tr:nth-child(even) td {
-            background: rgba(15, 23, 42, 0.9);
+            background: var(--table-row-alt-bg);
         }
         tr:hover td {
             background: rgba(15, 118, 110, 0.22);

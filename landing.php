@@ -60,6 +60,12 @@ if (preg_match('#^/share/([A-Za-z0-9_-]+)#', $path, $m)) {
 if ($targetUrl === null && preg_match('#^/news/(\d+)#', $path)) {
     $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
 }
+
+// For share links, if we have a configured target URL, use it as the canonical URL
+// for previews (e.g. WhatsApp) so the shared URL matches the article URL.
+if ($targetUrl !== null) {
+    $pageUrl = $targetUrl;
+}
 ?><!DOCTYPE html>
 <html lang="en">
 <head>

@@ -123,6 +123,7 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
             /* Light theme (default) */
             --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 45%, #f3f4f6 100%);
             --header-bg: #ffffff;
+            --header-fg: #0f172a;
             --card-bg: #ffffff;
             --card-elevated: #f9fafb;
             --accent: #22c55e;
@@ -130,12 +131,15 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
             --border-subtle: rgba(148, 163, 184, 0.35);
             --text-main: #0f172a;
             --text-muted: #6b7280;
+            --field-bg: #f9fafb;
+            --table-row-alt-bg: #f9fafb;
         }
 
         :root[data-theme="dark"] {
             /* Dark theme */
             --bg-gradient: radial-gradient(circle at top left, #020617 0, #020617 50%, #000000 100%);
             --header-bg: rgba(15, 23, 42, 0.98);
+            --header-fg: #e5e7eb;
             --card-bg: rgba(15, 23, 42, 0.96);
             --card-elevated: rgba(15, 23, 42, 0.98);
             --accent: #22c55e;
@@ -143,6 +147,8 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
             --border-subtle: rgba(148, 163, 184, 0.35);
             --text-main: #e5e7eb;
             --text-muted: #9ca3af;
+            --field-bg: rgba(15, 23, 42, 0.9);
+            --table-row-alt-bg: rgba(15, 23, 42, 0.9);
         }
         * { box-sizing: border-box; }
         body {
@@ -153,7 +159,7 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
         }
         header {
             background: var(--header-bg);
-            color: #e5e7eb;
+            color: var(--header-fg);
             padding: 12px 20px;
             display: flex;
             justify-content: space-between;
@@ -166,7 +172,7 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
             letter-spacing: -0.02em;
         }
         header a {
-            color: #e5e7eb;
+            color: var(--header-fg);
             text-decoration: none;
             font-size: 0.9rem;
             margin-left: 10px;
@@ -201,7 +207,7 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
             padding: 6px 8px;
             border-radius: 8px;
             border: 1px solid var(--border-subtle);
-            background: rgba(15, 23, 42, 0.9);
+            background: var(--field-bg);
             color: var(--text-main);
             font-size: 0.9rem;
             margin-bottom: 10px;
@@ -254,6 +260,9 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
         }
         th {
             color: var(--text-muted);
+        }
+        tr:nth-child(even) td {
+            background: var(--table-row-alt-bg);
         }
         td a {
             color: var(--accent);

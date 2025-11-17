@@ -41,22 +41,26 @@ if (!empty($visit['ip'])) {
             /* Light theme (default) */
             --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 45%, #f3f4f6 100%);
             --header-bg: #ffffff;
+            --header-fg: #0f172a;
             --card-bg: #ffffff;
             --border-subtle: rgba(148, 163, 184, 0.35);
             --text-main: #0f172a;
             --text-muted: #6b7280;
             --accent: #22c55e;
+            --table-row-alt-bg: #f9fafb;
         }
 
         :root[data-theme="dark"] {
             /* Dark theme */
             --bg-gradient: radial-gradient(circle at top left, #020617 0, #020617 50%, #000000 100%);
             --header-bg: rgba(15, 23, 42, 0.98);
+            --header-fg: #e5e7eb;
             --card-bg: rgba(15, 23, 42, 0.96);
             --border-subtle: rgba(148, 163, 184, 0.35);
             --text-main: #e5e7eb;
             --text-muted: #9ca3af;
             --accent: #22c55e;
+            --table-row-alt-bg: rgba(15, 23, 42, 0.9);
         }
 
         * {
@@ -71,12 +75,12 @@ if (!empty($visit['ip'])) {
         }
         header {
             background: var(--header-bg);
-            color: #ffffff;
+            color: var(--header-fg);
             padding: 12px 20px;
             border-bottom: 1px solid var(--border-subtle);
         }
         header a {
-            color: #e5e7eb;
+            color: var(--header-fg);
             text-decoration: none;
             font-size: 0.9rem;
         }
@@ -105,6 +109,9 @@ if (!empty($visit['ip'])) {
             width: 160px;
             background: rgba(15, 23, 42, 0.96);
             color: var(--text-muted);
+        }
+        tr:nth-child(even) td {
+            background: var(--table-row-alt-bg);
         }
         td {
             max-width: 520px;

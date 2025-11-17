@@ -47,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --text-main: #0f172a;
             --text-muted: #6b7280;
             --border-subtle: rgba(148, 163, 184, 0.35);
+            --field-bg: #f9fafb;
         }
 
         :root[data-theme="dark"] {
@@ -58,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --text-main: #e5e7eb;
             --text-muted: #9ca3af;
             --border-subtle: rgba(148, 163, 184, 0.35);
+            --field-bg: rgba(15, 23, 42, 0.9);
         }
 
         * {
@@ -116,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: 1px solid var(--border-subtle);
             margin-bottom: 14px;
             box-sizing: border-box;
-            background: rgba(15, 23, 42, 0.9);
+            background: var(--field-bg);
             color: var(--text-main);
         }
 
