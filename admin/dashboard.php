@@ -73,7 +73,135 @@ $currentQuery = http_build_query([
     'country' => $country,
     'device_type' => $deviceType,
 ]);
-?><!DOCTYPE html>
+
+function country_code_to_flag_emoji(string $code): ?string
+{
+    $code = strtoupper(trim($code));
+    if ($code === '' || strlen($code) !== 2) {
+        return null;
+    }
+
+    $a = ord('A');
+    $first = ord($code[0]);
+    $second = ord($code[1]);
+    if ($first < $a || $first > ord('Z') || $second < $a || $second > ord('Z')) {
+        return null;
+    }
+
+    $base = 0x1F1E6;
+    $cp1 = $base + ($first - $a);
+    $cp2 = $base + ($second - $a);
+
+    return '&#' . $cp1 . ';' . '&#' . $cp2 . ';';
+}
+
+function country_value_to_flag_emoji(string $value): ?string
+{
+    $code = strtoupper(trim($value));
+    if ($code === '') {
+        return null;
+    }
+
+    $map = [
+        'BANGLADESH' => 'BD',
+        'INDIA' => 'IN',
+        'PAKISTAN' => 'PK',
+        'NEPAL' => 'NP',
+        'SRI LANKA' => 'LK',
+        'SRI-LANKA' => 'LK',
+        'UNITED STATES' => 'US',
+        'UNITED STATES OF AMERICA' => 'US',
+        'USA' => 'US',
+        'UNITED KINGDOM' => 'GB',
+        'GREAT BRITAIN' => 'GB',
+        'UK' => 'GB',
+        'CANADA' => 'CA',
+        'AUSTRALIA' => 'AU',
+        'SAUDI ARABIA' => 'SA',
+        'KSA' => 'SA',
+        'UNITED ARAB EMIRATES' => 'AE',
+        'UAE' => 'AE',
+    ];
+
+    if (isset($map[$code])) {
+        $code = $map[$code];
+    }
+
+    if (strlen($code) === 2 && ctype_alpha($code)) {
+        return country_code_to_flag_emoji($code);
+    }
+
+    return null;
+}
+
+function render_country_with_flag(?string $country): string
+{
+    $cRaw = trim((string)$country);
+    if ($cRaw === '' || strtolower($cRaw) === 'unknown') {
+        return 'Unknown';
+    }
+
+    $cSafe = htmlspecialchars($cRaw, ENT_QUOTES, 'UTF-8');
+    $flag = country_value_to_flag_emoji($cRaw);
+
+    if ($flag !== null) {
+        return '<span>' . $flag . ' ' . $cSafe . '</span>';
+    }
+
+    return '<span><i class="bi bi-flag-fill icon-inline"></i>' . $cSafe . '</span>';
+}
+
+function render_country_city_with_flag(?string $country, ?string $city): string
+{
+    $cRaw = trim((string)$country);
+    $cityRaw = trim((string)$city);
+
+    $cSafe = $cRaw !== '' ? htmlspecialchars($cRaw, ENT_QUOTES, 'UTF-8') : '';
+    $citySafe = $cityRaw !== '' ? htmlspecialchars($cityRaw, ENT_QUOTES, 'UTF-8') : '';
+
+    if ($cSafe === '' && $citySafe === '') {
+        return '';
+    }
+
+    $parts = [];
+    if ($cSafe !== '') {
+        $parts[] = $cSafe;
+    }
+    if ($citySafe !== '') {
+        $parts[] = $citySafe;
+    }
+
+    $text = implode(' / ', $parts);
+
+    if ($cSafe !== '') {
+        $flag = country_value_to_flag_emoji($cRaw);
+        if ($flag !== null) {
+            return '<span>' . $flag . ' ' . $text . '</span>';
+        }
+
+        return '<span><i class="bi bi-flag-fill icon-inline"></i>' . $text . '</span>';
+    }
+
+    return $text;
+}
+
+function render_device_with_icon(?string $deviceType): string
+{
+    $raw = strtolower(trim((string)$deviceType));
+    $label = $deviceType !== null && $deviceType !== '' ? $deviceType : 'Unknown';
+
+    $icon = 'bi-laptop';
+    if ($raw === 'mobile') {
+        $icon = 'bi-phone';
+    } elseif ($raw === 'tablet') {
+        $icon = 'bi-tablet';
+    }
+
+    $labelSafe = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+    return '<span><i class="bi ' . $icon . ' icon-inline"></i>' . $labelSafe . '</span>';
+}
+?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -443,18 +571,15 @@ $currentQuery = http_build_query([
             margin-right: 4px;
         }
 
-        .theme-toggle .icon-light,
-        .theme-toggle .icon-dark {
-            margin-right: 6px;
-            font-size: 0.9rem;
-        }
-        .theme-toggle .icon-dark {
+        .theme-toggle .theme-icon-moon {
             display: none;
         }
-        :root[data-theme="dark"] .theme-toggle .icon-light {
+
+        [data-theme="dark"] .theme-toggle .theme-icon-sun {
             display: none;
         }
-        :root[data-theme="dark"] .theme-toggle .icon-dark {
+
+        [data-theme="dark"] .theme-toggle .theme-icon-moon {
             display: inline-block;
         }
 
@@ -499,8 +624,8 @@ $currentQuery = http_build_query([
 </head>
 <body>
 <button type="button" class="theme-toggle" data-theme-toggle>
-    <i class="bi bi-brightness-high-fill icon-light"></i>
-    <i class="bi bi-moon-stars-fill icon-dark"></i>
+    <i class="bi bi-sun-fill theme-icon-sun"></i>
+    <i class="bi bi-moon-stars-fill theme-icon-moon"></i>
     <span data-theme-toggle-label>Light</span> mode
 </button>
 <div class="sidebar">
@@ -529,10 +654,10 @@ $currentQuery = http_build_query([
             <div class="card-value"><?= $todayVisits ?></div>
         </div>
         <div class="card">
-            <div class="card-title"><i class="bi bi-flag-fill icon-inline"></i>Top countries</div>
+            <div class="card-title"><i class="bi bi-geo-alt icon-inline"></i>Top countries</div>
             <ul class="top-list">
                 <?php foreach ($topCountries as $row): ?>
-                    <li><i class="bi bi-flag icon-inline"></i><?= h($row['country'] ?? 'Unknown') ?> (<?= (int)$row['c'] ?>)</li>
+                    <li><?= render_country_with_flag($row['country'] ?? null) ?> (<?= (int)$row['c'] ?>)</li>
                 <?php endforeach; ?>
                 <?php if (!$topCountries): ?>
                     <li>–</li>
@@ -543,7 +668,7 @@ $currentQuery = http_build_query([
             <div class="card-title"><i class="bi bi-phone-laptop icon-inline"></i>Devices</div>
             <ul class="top-list">
                 <?php foreach ($topDevices as $row): ?>
-                    <li><?= h($row['device_type'] ?? 'Unknown') ?> (<?= (int)$row['c'] ?>)</li>
+                    <li><?= render_device_with_icon($row['device_type'] ?? null) ?> (<?= (int)$row['c'] ?>)</li>
                 <?php endforeach; ?>
                 <?php if (!$topDevices): ?>
                     <li>–</li>
@@ -585,10 +710,10 @@ $currentQuery = http_build_query([
                 <th><input type="checkbox" id="select-all"></th>
                 <th>Date</th>
                 <th>IP</th>
-                <th><i class="bi bi-flag icon-inline"></i>Country/City</th>
+                <th>Country/City</th>
                 <th>Browser</th>
                 <th>OS</th>
-                <th><i class="bi bi-phone icon-inline"></i>Device</th>
+                <th>Device</th>
                 <th>VPN?</th>
                 <th>Duration</th>
                 <th>Visits</th>
@@ -622,10 +747,10 @@ $currentQuery = http_build_query([
                     <td><input type="checkbox" class="visit-checkbox" name="ids[]" value="<?= (int)$v['id'] ?>"></td>
                     <td><?= h($v['created_at']) ?></td>
                     <td><a href="/admin/visit?id=<?= (int)$v['id'] ?>"><?= h($v['ip']) ?></a></td>
-                    <td><?= h(trim(($v['country'] ?? '') . ' / ' . ($v['city'] ?? ''), ' /')) ?></td>
+                    <td><?= render_country_city_with_flag($v['country'] ?? null, $v['city'] ?? null) ?></td>
                     <td><?= h($v['browser_name'] ?? '') ?></td>
                     <td><?= h($v['os_name'] ?? '') ?></td>
-                    <td><?= h($v['device_type'] ?? '') ?></td>
+                    <td><?= render_device_with_icon($v['device_type'] ?? null) ?></td>
                     <td><?= $vpnSuspected ? 'Yes' : '' ?></td>
                     <td><?= $v['duration_seconds'] !== null ? h((string)$v['duration_seconds']) . ' s' : '' ?></td>
                     <td><?= $v['visit_count'] !== null ? (int)$v['visit_count'] : '' ?></td>
@@ -676,8 +801,8 @@ $currentQuery = http_build_query([
                         </div>
                     </div>
                     <div class="record-row">
-                        <div class="record-label"><i class="bi bi-flag icon-inline"></i>Country/City</div>
-                        <div class="record-value"><?= h(trim(($v['country'] ?? '') . ' / ' . ($v['city'] ?? ''), ' /')) ?></div>
+                        <div class="record-label">Country/City</div>
+                        <div class="record-value"><?= render_country_city_with_flag($v['country'] ?? null, $v['city'] ?? null) ?></div>
                     </div>
                     <div class="record-row">
                         <div class="record-label">Browser</div>
@@ -688,8 +813,8 @@ $currentQuery = http_build_query([
                         <div class="record-value"><?= h($v['os_name'] ?? '') ?></div>
                     </div>
                     <div class="record-row">
-                        <div class="record-label"><i class="bi bi-phone icon-inline"></i>Device</div>
-                        <div class="record-value"><?= h($v['device_type'] ?? '') ?></div>
+                        <div class="record-label">Device</div>
+                        <div class="record-value"><?= render_device_with_icon($v['device_type'] ?? null) ?></div>
                     </div>
                     <div class="record-row">
                         <div class="record-label">VPN?</div>
@@ -710,7 +835,7 @@ $currentQuery = http_build_query([
                     <?php if ($mapUrl !== ''): ?>
                         <div class="record-row">
                             <div class="record-label">Map</div>
-                            <div class="record-value"><a href="<?= h($mapUrl) ?>" target="_blank"><i class="bi bi-geo-alt icon-inline"></i>Open</a></div>
+                            <div class="record-value"><a href="<?= h($mapUrl) ?>" target="_blank">Open</a></div>
                         </div>
                     <?php endif; ?>
                 </div>
