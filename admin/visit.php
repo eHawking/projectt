@@ -72,6 +72,90 @@ if (!empty($visit['ip'])) {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--bg-gradient);
             color: var(--text-main);
+            padding-left: 220px;
+            min-height: 100vh;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 220px;
+            background: #020b26;
+            border-right: 1px solid var(--border-subtle);
+            padding: 18px 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 30;
+        }
+        .sidebar-logo-main {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #f9fafb;
+        }
+        .sidebar-logo-sub {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .sidebar-nav {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .sidebar-link {
+            display: block;
+            padding: 8px 10px;
+            border-radius: 999px;
+            font-size: 0.86rem;
+            color: var(--text-muted);
+            text-decoration: none;
+        }
+        .sidebar-link:hover {
+            background: #020b35;
+            color: #f9fafb;
+        }
+        .sidebar-link-active {
+            background: var(--accent) ;
+            color: #f9fafb;
+        }
+        .sidebar-user {
+            margin-top: auto;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .sidebar-user a {
+            display: inline-block;
+            margin-top: 6px;
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.82rem;
+        }
+        .sidebar-user a:hover {
+            text-decoration: underline;
+        }
+        .bottom-nav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 52px;
+            background: #020b26;
+            border-top: 1px solid var(--border-subtle);
+            display: none;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 40;
+        }
+        .bottom-nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.75rem;
+        }
+        .bottom-nav-link-active {
+            color: var(--accent);
         }
         header {
             background: var(--header-bg);
@@ -136,6 +220,22 @@ if (!empty($visit['ip'])) {
             margin-right: 4px;
         }
 
+        @media (max-width: 900px) {
+            body {
+                padding-left: 0;
+                padding-bottom: 60px;
+            }
+            .sidebar {
+                display: none;
+            }
+            .container {
+                padding: 0 12px 24px;
+            }
+            .bottom-nav {
+                display: flex;
+            }
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 0 12px 24px;
@@ -153,10 +253,23 @@ if (!empty($visit['ip'])) {
 <button type="button" class="theme-toggle" data-theme-toggle>
     <span data-theme-toggle-label>Light</span> mode
 </button>
+<div class="sidebar">
+    <div class="sidebar-logo-main">DS Analytics</div>
+    <div class="sidebar-logo-sub">Admin panel</div>
+    <nav class="sidebar-nav">
+        <a href="/admin/dashboard" class="sidebar-link sidebar-link-active">Dashboard</a>
+        <a href="/admin/share_links" class="sidebar-link">Share links</a>
+    </nav>
+    <div class="sidebar-user">
+        <div>Logged in as <?= h($_SESSION['admin_username'] ?? 'admin') ?></div>
+        <a href="/admin/logout">Logout</a>
+    </div>
+</div>
 <header>
-    <a href="/admin/dashboard">&larr; Back to dashboard</a>
+    <h1>Visit details</h1>
 </header>
 <div class="container">
+    <p style="margin: 0 0 10px 0;"><a href="/admin/dashboard" style="color: var(--accent); text-decoration: none;">&larr; Back to dashboard</a></p>
     <h2>Visit #<?= (int)$visit['id'] ?></h2>
     <table>
         <tr><th>Date</th><td><?= h($visit['created_at']) ?></td></tr>
@@ -189,5 +302,10 @@ if (!empty($visit['ip'])) {
     </table>
 </div>
 <script src="/assets/js/theme.js"></script>
+<div class="bottom-nav">
+    <a href="/admin/dashboard" class="bottom-nav-link bottom-nav-link-active">Dashboard</a>
+    <a href="/admin/share_links" class="bottom-nav-link">Share</a>
+    <a href="/admin/logout" class="bottom-nav-link">Logout</a>
+</div>
 </body>
 </html>
