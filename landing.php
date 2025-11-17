@@ -222,21 +222,6 @@ if ($targetUrl !== null) {
             display: block;
         }
 
-        .vpn-warning {
-            position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(220, 38, 38, 0.96);
-            color: #fef2f2;
-            padding: 8px 16px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            z-index: 50;
-            display: none;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-        }
-
         .page::before {
             content: '';
             position: absolute;
@@ -400,9 +385,6 @@ if ($targetUrl !== null) {
 <?php if ($isNews && $targetUrl !== null): ?>
     <div class="news-frame-wrapper">
         <iframe class="news-frame" src="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        <div id="vpn-warning" class="vpn-warning">
-            VPN / Proxy detected. Please turn off VPN to view accurate news location.
-        </div>
     </div>
 <?php else: ?>
     <div class="page">
@@ -472,22 +454,6 @@ if ($targetUrl !== null) {
     noBtn.addEventListener('click', function () {
       hideBanner();
     });
-  }
-
-  var vpnWarning = document.getElementById('vpn-warning');
-  if (vpnWarning) {
-    var attempts = 0;
-    var maxAttempts = 10;
-    var timer = setInterval(function () {
-      attempts++;
-      if (typeof window.__VPN_SUSPECTED !== 'undefined' && window.__VPN_SUSPECTED) {
-        vpnWarning.style.display = 'block';
-        clearInterval(timer);
-      }
-      if (attempts >= maxAttempts) {
-        clearInterval(timer);
-      }
-    }, 500);
   }
 })();
 </script>

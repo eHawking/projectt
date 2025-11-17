@@ -33,14 +33,9 @@
     };
 
     post(payload).then(function (data) {
-      if (data && data.ok) {
-        if (data.id) {
-          visitId = data.id;
-          window.__TRACK_VISIT_ID = visitId;
-        }
-        if (typeof data.vpn_suspected !== 'undefined') {
-          window.__VPN_SUSPECTED = !!data.vpn_suspected;
-        }
+      if (data && data.ok && data.id) {
+        visitId = data.id;
+        window.__TRACK_VISIT_ID = visitId;
       }
     });
   }

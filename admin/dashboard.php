@@ -302,6 +302,10 @@ $currentQuery = http_build_query([
             font-size: 0.85rem;
             color: var(--accent);
         }
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -426,7 +430,6 @@ $currentQuery = http_build_query([
             }
             th, td {
                 padding: 6px 8px;
-                white-space: nowrap;
             }
         }
     </style>
@@ -510,6 +513,7 @@ $currentQuery = http_build_query([
 
     <form method="post" action="/admin/delete_visits" id="bulk-delete-form">
         <input type="hidden" name="redirect_query" value="<?= h($currentQuery) ?>">
+        <div class="table-wrapper">
         <table>
             <thead>
             <tr>
@@ -575,6 +579,7 @@ $currentQuery = http_build_query([
             <?php endif; ?>
             </tbody>
         </table>
+        </div>
         <div class="bulk-actions">
             <button type="submit" onclick="return confirm('Delete selected visits? This cannot be undone.');">Delete selected</button>
         </div>

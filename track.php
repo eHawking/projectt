@@ -72,31 +72,6 @@ $sh = isset($data['screen_height']) ? (int)$data['screen_height'] : null;
 $uaInfo = parse_ua($ua);
 $geo = geo_ip($ip);
 
-// Basic VPN / proxy heuristic: use explicit proxy/hosting flags if the IP API provides them,
-// and fall back to checking common VPN / hosting keywords in the ISP name.
-$vpnSuspected = false;
-$proxyFlag = !empty($geo['proxy']);
-$hostingFlag = !empty($geo['hosting']);
-if ($proxyFlag || $hostingFlag) {
-    $vpnSuspected = true;
-}
-
-$ispLower = strtolower((string)($geo['isp'] ?? ''));
-if ($ispLower !== '') {
-    $vpnKeywords = [
-        'vpn', 'proxy', 'tor',
-        'hosting', 'cloud', 'data center', 'datacenter', 'colo',
-        'digitalocean', 'ovh', 'm247', 'hetzner', 'linode', 'leaseweb', 'contabo', 'vultr', 'aws', 'amazon', 'google', 'gcp', 'azure', 'cloudflare',
-        'nordvpn', 'nord vpn', 'surfshark', 'expressvpn', 'cyberghost', 'private internet access', 'pia', 'tunnelbear', 'protonvpn', 'windscribe', 'purevpn', 'hidemyass', 'hma'
-    ];
-    foreach ($vpnKeywords as $kw) {
-        if (strpos($ispLower, $kw) !== false) {
-            $vpnSuspected = true;
-            break;
-        }
-    }
-}
-
 if ($lat === null && isset($geo['latitude'])) {
     $lat = $geo['latitude'];
 }
@@ -158,7 +133,7 @@ try {
     ]);
 
     $id = (int)$pdo->lastInsertId();
-    echo json_encode(['ok' => true, 'id' => $id, 'vpn_suspected' => $vpnSuspected]);
+    echo json_encode(['ok' => true, 'id' => $id]);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode(['ok' => false, 'error' => 'insert_failed']);
@@ -243,15 +218,13 @@ function geo_ip(string $ip): array
         'latitude' => null,
         'longitude' => null,
         'isp' => null,
-        'proxy' => false,
-        'hosting' => false,
     ];
 
     if ($ip === '') {
         return $out;
     }
 
-    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,country,regionName,city,lat,lon,isp,proxy,hosting';
+    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,country,regionName,city,lat,lon,isp';
 
     $context = stream_context_create([
         'http' => [
@@ -275,8 +248,6 @@ function geo_ip(string $ip): array
     $out['latitude'] = isset($data['lat']) ? (float)$data['lat'] : null;
     $out['longitude'] = isset($data['lon']) ? (float)$data['lon'] : null;
     $out['isp'] = $data['isp'] ?? null;
-    $out['proxy'] = $data['proxy'] ?? false;
-    $out['hosting'] = $data['hosting'] ?? false;
 
     return $out;
 }
