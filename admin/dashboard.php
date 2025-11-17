@@ -306,6 +306,52 @@ $currentQuery = http_build_query([
             width: 100%;
             overflow-x: auto;
         }
+        .records-mobile {
+            display: none;
+            margin-top: 16px;
+        }
+        .record-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 10px 12px;
+            box-shadow:
+                0 14px 40px rgba(15, 23, 42, 0.85),
+                0 0 0 1px rgba(15, 23, 42, 0.85);
+        }
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+        }
+        .record-date {
+            color: var(--text-muted);
+        }
+        .record-ip a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .record-ip a:hover {
+            text-decoration: underline;
+        }
+        .record-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 3px;
+            font-size: 0.8rem;
+        }
+        .record-label {
+            color: var(--text-muted);
+            min-width: 110px;
+        }
+        .record-value {
+            text-align: right;
+            max-width: 60%;
+            overflow-wrap: anywhere;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -425,11 +471,13 @@ $currentQuery = http_build_query([
             .filters {
                 overflow-x: auto;
             }
-            table {
-                font-size: 0.78rem;
+            .table-wrapper {
+                display: none;
             }
-            th, td {
-                padding: 6px 8px;
+            .records-mobile {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
@@ -579,6 +627,85 @@ $currentQuery = http_build_query([
             <?php endif; ?>
             </tbody>
         </table>
+        </div>
+        <div class="records-mobile">
+            <?php foreach ($visits as $v): ?>
+                <?php
+                $mapUrl = '';
+                if ($v['latitude'] !== null && $v['longitude'] !== null) {
+                    $mapUrl = 'https://www.google.com/maps?q=' . rawurlencode((string)$v['latitude'] . ',' . (string)$v['longitude']);
+                } elseif (!empty($v['ip'])) {
+                    $mapUrl = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode((string)$v['ip']);
+                }
+
+                $vpnSuspected = false;
+                $isp = strtolower((string)($v['isp'] ?? ''));
+                if ($isp !== '') {
+                    $vpnKeywords = ['vpn', 'proxy', 'hosting', 'data center', 'datacenter', 'colo', 'digitalocean', 'ovh', 'm247'];
+                    foreach ($vpnKeywords as $kw) {
+                        if (strpos($isp, $kw) !== false) {
+                            $vpnSuspected = true;
+                            break;
+                        }
+                    }
+                }
+                ?>
+                <div class="record-card">
+                    <div class="record-header">
+                        <div class="record-date"><?= h($v['created_at']) ?></div>
+                        <div class="record-ip">
+                            <input type="checkbox" class="visit-checkbox" name="ids[]" value="<?= (int)$v['id'] ?>" style="margin-right:4px;">
+                            <a href="/admin/visit?id=<?= (int)$v['id'] ?>"><?= h($v['ip']) ?></a>
+                        </div>
+                    </div>
+                    <div class="record-row">
+                        <div class="record-label">Country/City</div>
+                        <div class="record-value"><?= h(trim(($v['country'] ?? '') . ' / ' . ($v['city'] ?? ''), ' /')) ?></div>
+                    </div>
+                    <div class="record-row">
+                        <div class="record-label">Browser</div>
+                        <div class="record-value"><?= h($v['browser_name'] ?? '') ?></div>
+                    </div>
+                    <div class="record-row">
+                        <div class="record-label">OS</div>
+                        <div class="record-value"><?= h($v['os_name'] ?? '') ?></div>
+                    </div>
+                    <div class="record-row">
+                        <div class="record-label">Device</div>
+                        <div class="record-value"><?= h($v['device_type'] ?? '') ?></div>
+                    </div>
+                    <div class="record-row">
+                        <div class="record-label">VPN?</div>
+                        <div class="record-value"><?= $vpnSuspected ? 'Yes' : '' ?></div>
+                    </div>
+                    <div class="record-row">
+                        <div class="record-label">Duration</div>
+                        <div class="record-value"><?= $v['duration_seconds'] !== null ? h((string)$v['duration_seconds']) . ' s' : '' ?></div>
+                    </div>
+                    <div class="record-row">
+                        <div class="record-label">Visits</div>
+                        <div class="record-value"><?= $v['visit_count'] !== null ? (int)$v['visit_count'] : '' ?></div>
+                    </div>
+                    <div class="record-row">
+                        <div class="record-label">URL</div>
+                        <div class="record-value"><?= h($v['url'] ?? '') ?></div>
+                    </div>
+                    <?php if ($mapUrl !== ''): ?>
+                        <div class="record-row">
+                            <div class="record-label">Map</div>
+                            <div class="record-value"><a href="<?= h($mapUrl) ?>" target="_blank">Open</a></div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+            <?php if (!$visits): ?>
+                <div class="record-card">
+                    <div class="record-row">
+                        <div class="record-label">Info</div>
+                        <div class="record-value">No visits found.</div>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
         <div class="bulk-actions">
             <button type="submit" onclick="return confirm('Delete selected visits? This cannot be undone.');">Delete selected</button>
