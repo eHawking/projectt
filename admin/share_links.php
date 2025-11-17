@@ -136,6 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($meta['image'] !== null) {
                     $remoteImageUrl = $meta['image'];
                 }
+                if ($slug === ''
+                    && preg_match('#^https?://(?:www\.)?dailysokalersomoy\.com/news/(\d+)#i', $targetUrl, $mNews)) {
+                    $slug = 'news-' . $mNews[1];
+                }
                 if (!$errors) {
                     $success = 'Metadata fetched. Review and adjust before saving.';
                 }
@@ -246,6 +250,7 @@ $stmt = $pdo->query('SELECT id, slug, title, description, image_path, target_url
 $links = $stmt->fetchAll();
 
 $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
+$baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -590,7 +595,7 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
         </div>
         <form method="post" enctype="multipart/form-data">
             <label for="slug">Slug (for /share/slug)</label>
-            <input type="text" name="slug" id="slug" value="<?= h($slug) ?>" placeholder="e.g. campaign1" required>
+            <input type="text" name="slug" id="slug" value="<?= h($slug) ?>" placeholder="e.g. campaign1">
 
             <label for="title">Title (for WhatsApp / Open Graph)</label>
             <input type="text" name="title" id="title" value="<?= h($title) ?>" required>
@@ -643,11 +648,18 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
             </thead>
             <tbody>
             <?php foreach ($links as $row): ?>
+                <?php
+                $shareUrl = $baseShareUrl . $row['slug'];
+                $target = (string)($row['target_url'] ?? '');
+                if ($target !== '' && preg_match('#^https?://(?:www\.)?dailysokalersomoy\.com/news/(\d+)#i', $target, $mNews)) {
+                    $shareUrl = $baseNewsUrl . $mNews[1];
+                }
+                ?>
                 <tr>
                     <td><?= h($row['slug']) ?></td>
                     <td><?= h($row['title']) ?></td>
                     <td style="max-width: 260px; overflow-wrap: anywhere;">
-                        <?= h($row['target_url'] !== null && $row['target_url'] !== '' ? $row['target_url'] : ($baseShareUrl . $row['slug'])) ?>
+                        <?= h($shareUrl) ?>
                     </td>
                     <td>
                         <?php if ((int)$row['is_active'] === 1): ?>
@@ -657,7 +669,7 @@ $baseShareUrl = rtrim(BASE_URL, '/') . '/share/';
                         <?php endif; ?>
                     </td>
                     <td>
-                        <a href="<?= h($baseShareUrl . $row['slug']) ?>" target="_blank">Open</a>
+                        <a href="<?= h($shareUrl) ?>" target="_blank">Open</a>
                         |
                         <a href="/admin/share_links?delete=<?= (int)$row['id'] ?>" onclick="return confirm('Delete this share link?');">Delete</a>
                     </td>
