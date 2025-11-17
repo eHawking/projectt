@@ -13,7 +13,7 @@ function is_logged_in(): bool
 function require_login(): void
 {
     if (!is_logged_in()) {
-        header('Location: login.php');
+        header('Location: /admin/login');
         exit;
     }
 }

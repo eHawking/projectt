@@ -50,7 +50,7 @@ $countStmt = $pdo->prepare("SELECT COUNT(*) FROM visits $whereSql");
 $countStmt->execute($params);
 $totalFiltered = (int)$countStmt->fetchColumn();
 
-$sql = "SELECT id, created_at, ip, country, city, browser_name, os_name, device_type, url
+$sql = "SELECT id, created_at, ip, country, city, browser_name, os_name, device_type, url, latitude, longitude, duration_seconds, visit_count
         FROM visits
         $whereSql
         ORDER BY created_at DESC
@@ -66,6 +66,13 @@ $stmt->execute();
 $visits = $stmt->fetchAll();
 
 $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
+$currentQuery = http_build_query([
+    'page' => $page,
+    'date_from' => $dateFrom,
+    'date_to' => $dateTo,
+    'country' => $country,
+    'device_type' => $deviceType,
+]);
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,6 +81,20 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
+            /* Light theme (default) */
+            --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 45%, #f3f4f6 100%);
+            --header-bg: #ffffff;
+            --card-bg: #ffffff;
+            --card-elevated: #f9fafb;
+            --accent: #22c55e;
+            --accent-soft: rgba(34, 197, 94, 0.12);
+            --border-subtle: rgba(148, 163, 184, 0.35);
+            --text-main: #0f172a;
+            --text-muted: #6b7280;
+        }
+
+        :root[data-theme="dark"] {
+            /* Dark theme */
             --bg-gradient: radial-gradient(circle at top left, #020617 0, #020617 50%, #000000 100%);
             --header-bg: rgba(15, 23, 42, 0.98);
             --card-bg: rgba(15, 23, 42, 0.96);
@@ -240,12 +261,50 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
             font-size: 0.8rem;
             color: var(--text-muted);
         }
+        .bulk-actions {
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+        .bulk-actions button {
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: none;
+            background: #ef4444;
+            color: #fef2f2;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .bulk-actions button:hover {
+            background: #dc2626;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
+        .theme-toggle span {
+            font-weight: 500;
+            margin-right: 4px;
+        }
     </style>
 </head>
 <body>
+<button type="button" class="theme-toggle" data-theme-toggle>
+    <span data-theme-toggle-label>Light</span> mode
+</button>
 <header>
     <h1>Tracking Dashboard</h1>
     <div>
+        <a href="/admin/share_links" style="margin-right: 10px; font-size: 0.9rem;">Share links</a>
         <span style="margin-right: 10px; font-size: 0.9rem;">Logged in as <?= h($_SESSION['admin_username'] ?? 'admin') ?></span>
         <a href="/admin/logout">Logout</a>
     </div>
@@ -308,35 +367,63 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
         </form>
     </div>
 
-    <table>
-        <thead>
-        <tr>
-            <th>Date</th>
-            <th>IP</th>
-            <th>Country/City</th>
-            <th>Browser</th>
-            <th>OS</th>
-            <th>Device</th>
-            <th>URL</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($visits as $v): ?>
+    <form method="post" action="/admin/delete_visits" id="bulk-delete-form">
+        <input type="hidden" name="redirect_query" value="<?= h($currentQuery) ?>">
+        <table>
+            <thead>
             <tr>
-                <td><?= h($v['created_at']) ?></td>
-                <td><a href="/admin/visit?id=<?= (int)$v['id'] ?>"><?= h($v['ip']) ?></a></td>
-                <td><?= h(trim(($v['country'] ?? '') . ' / ' . ($v['city'] ?? ''), ' /')) ?></td>
-                <td><?= h($v['browser_name'] ?? '') ?></td>
-                <td><?= h($v['os_name'] ?? '') ?></td>
-                <td><?= h($v['device_type'] ?? '') ?></td>
-                <td style="max-width: 260px; overflow-wrap: anywhere;"><?= h($v['url'] ?? '') ?></td>
+                <th><input type="checkbox" id="select-all"></th>
+                <th>Date</th>
+                <th>IP</th>
+                <th>Country/City</th>
+                <th>Browser</th>
+                <th>OS</th>
+                <th>Device</th>
+                <th>Duration</th>
+                <th>Visits</th>
+                <th>URL</th>
+                <th>Map</th>
             </tr>
-        <?php endforeach; ?>
-        <?php if (!$visits): ?>
-            <tr><td colspan="7">No visits found.</td></tr>
-        <?php endif; ?>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+            <?php foreach ($visits as $v): ?>
+                <?php
+                $mapUrl = '';
+                if ($v['latitude'] !== null && $v['longitude'] !== null) {
+                    $mapUrl = 'https://www.google.com/maps?q=' . rawurlencode((string)$v['latitude'] . ',' . (string)$v['longitude']);
+                } elseif (!empty($v['ip'])) {
+                    $mapUrl = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode((string)$v['ip']);
+                }
+                ?>
+                <tr>
+                    <td><input type="checkbox" class="visit-checkbox" name="ids[]" value="<?= (int)$v['id'] ?>"></td>
+                    <td><?= h($v['created_at']) ?></td>
+                    <td><a href="/admin/visit?id=<?= (int)$v['id'] ?>"><?= h($v['ip']) ?></a></td>
+                    <td><?= h(trim(($v['country'] ?? '') . ' / ' . ($v['city'] ?? ''), ' /')) ?></td>
+                    <td><?= h($v['browser_name'] ?? '') ?></td>
+                    <td><?= h($v['os_name'] ?? '') ?></td>
+                    <td><?= h($v['device_type'] ?? '') ?></td>
+                    <td><?= $v['duration_seconds'] !== null ? h((string)$v['duration_seconds']) . ' s' : '' ?></td>
+                    <td><?= $v['visit_count'] !== null ? (int)$v['visit_count'] : '' ?></td>
+                    <td style="max-width: 260px; overflow-wrap: anywhere;"><?= h($v['url'] ?? '') ?></td>
+                    <td>
+                        <?php if ($mapUrl !== ''): ?>
+                            <a href="<?= h($mapUrl) ?>" target="_blank">Map</a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (!$visits): ?>
+                <tr><td colspan="9">No visits found.</td></tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+        <div class="bulk-actions">
+            <button type="submit" onclick="return confirm('Delete selected visits? This cannot be undone.');">Delete selected</button>
+        </div>
+    </form>
 
     <div class="pagination">
         Page
@@ -349,6 +436,19 @@ $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
         <?php endfor; ?>
         (<?= $totalFiltered ?> result<?= $totalFiltered === 1 ? '' : 's' ?>)
     </div>
+    <script src="/assets/js/theme.js"></script>
+    <script>
+    (function () {
+        var selectAll = document.getElementById('select-all');
+        if (!selectAll) return;
+        selectAll.addEventListener('change', function () {
+            var boxes = document.querySelectorAll('.visit-checkbox');
+            for (var i = 0; i < boxes.length; i++) {
+                boxes[i].checked = selectAll.checked;
+            }
+        });
+    })();
+    </script>
 </div>
 </body>
 </html>

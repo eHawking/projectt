@@ -11,9 +11,17 @@ RewriteRule ^landing/?$ landing.php [L,QSA]
 # Specific news link mapped to landing (for WhatsApp preview and tracking)
 RewriteRule ^news/138822/?$ landing.php [L,QSA]
 
+# Public share links mapped to landing
+RewriteRule ^share/([A-Za-z0-9_-]+)/?$ landing.php [L,QSA]
+
 # Pretty URLs for admin area
 RewriteRule ^admin/login/?$ admin/login.php [L,QSA]
 RewriteRule ^admin/dashboard/?$ admin/dashboard.php [L,QSA]
 RewriteRule ^admin/export/?$ admin/export.php [L,QSA]
 RewriteRule ^admin/visit/?$ admin/visit.php [L,QSA]
+RewriteRule ^admin/share_links/?$ admin/share_links.php [L,QSA]
+RewriteRule ^admin/delete_visits/?$ admin/delete_visits.php [L,QSA]
 RewriteRule ^admin/init_admin/?$ admin/init_admin.php [L,QSA]
+
+# Fallback: any other non-existing URL redirects to homepage
+RewriteRule ^.*$ /landing [L,R=302]

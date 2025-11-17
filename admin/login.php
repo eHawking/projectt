@@ -39,6 +39,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
+            /* Light theme (default) */
+            --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 40%, #f3f4f6 100%);
+            --card-bg: #ffffff;
+            --accent: #22c55e;
+            --accent-strong: #16a34a;
+            --text-main: #0f172a;
+            --text-muted: #6b7280;
+            --border-subtle: rgba(148, 163, 184, 0.35);
+        }
+
+        :root[data-theme="dark"] {
+            /* Dark theme */
             --bg-gradient: radial-gradient(circle at top left, #111827 0, #020617 40%, #020617 100%);
             --card-bg: rgba(15, 23, 42, 0.96);
             --accent: #22c55e;
@@ -145,9 +157,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 10px;
             text-align: center;
         }
+
+        .theme-toggle {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
+        .theme-toggle span {
+            font-weight: 500;
+            margin-right: 4px;
+        }
     </style>
 </head>
 <body>
+<button type="button" class="theme-toggle" data-theme-toggle>
+    <span data-theme-toggle-label>Light</span> mode
+</button>
 <div class="login-box">
     <h1>Admin Login</h1>
     <p class="sub">Sign in to view your visitor analytics dashboard.</p>
@@ -164,5 +197,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit">Log in</button>
     </form>
 </div>
+<script src="/assets/js/theme.js"></script>
 </body>
 </html>

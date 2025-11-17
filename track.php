@@ -22,6 +22,26 @@ if (!is_array($data)) {
 $visitId = isset($data['visit_id']) ? (int)$data['visit_id'] : 0;
 $lat = array_key_exists('latitude', $data) ? (float)$data['latitude'] : null;
 $lon = array_key_exists('longitude', $data) ? (float)$data['longitude'] : null;
+$durationSeconds = array_key_exists('duration_seconds', $data) ? (int)$data['duration_seconds'] : null;
+
+// Update duration for an existing visit
+if ($visitId > 0 && $durationSeconds !== null) {
+    if ($durationSeconds < 0) {
+        $durationSeconds = 0;
+    }
+    try {
+        $stmt = $pdo->prepare('UPDATE visits SET duration_seconds = :dur WHERE id = :id');
+        $stmt->execute([
+            ':dur' => $durationSeconds,
+            ':id'  => $visitId,
+        ]);
+        echo json_encode(['ok' => true, 'updated' => true]);
+    } catch (Throwable $e) {
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'error' => 'update_failed']);
+    }
+    exit;
+}
 
 // Update precise location for an existing visit
 if ($visitId > 0 && ($lat !== null || $lon !== null)) {
@@ -59,6 +79,15 @@ if ($lon === null && isset($geo['longitude'])) {
     $lon = $geo['longitude'];
 }
 
+$visitCount = 1;
+try {
+    $cstmt = $pdo->prepare('SELECT COUNT(*) FROM visits WHERE ip = :ip');
+    $cstmt->execute([':ip' => $ip]);
+    $visitCount = ((int)$cstmt->fetchColumn()) + 1;
+} catch (Throwable $e) {
+    $visitCount = 1;
+}
+
 try {
     $sql = 'INSERT INTO visits (
         ip, country, region, city,
@@ -66,14 +95,18 @@ try {
         user_agent, browser_name, browser_version,
         os_name, os_version, device_type,
         referer, url, language,
-        screen_width, screen_height, created_at
+        screen_width, screen_height,
+        duration_seconds, visit_count,
+        created_at
     ) VALUES (
         :ip, :country, :region, :city,
         :lat, :lon, :isp,
         :ua, :bname, :bver,
         :os, :osver, :dtype,
         :ref, :url, :lang,
-        :sw, :sh, NOW()
+        :sw, :sh,
+        NULL, :vcount,
+        NOW()
     )';
 
     $stmt = $pdo->prepare($sql);
@@ -96,6 +129,7 @@ try {
         ':lang' => $lang,
         ':sw' => $sw,
         ':sh' => $sh,
+        ':vcount' => $visitCount,
     ]);
 
     $id = (int)$pdo->lastInsertId();

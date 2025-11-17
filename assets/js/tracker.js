@@ -2,6 +2,8 @@
   'use strict';
 
   var visitId = null;
+  var startTime = Date.now();
+  var durationSent = false;
 
   function post(data) {
     return fetch('track.php', {
@@ -32,6 +34,36 @@
         window.__TRACK_VISIT_ID = visitId;
       }
     });
+  }
+
+  function sendDuration() {
+    if (durationSent) return;
+    if (!visitId) return;
+    var now = Date.now();
+    var seconds = Math.round((now - startTime) / 1000);
+    if (!seconds || seconds < 0) return;
+
+    var payload = {
+      visit_id: visitId,
+      duration_seconds: seconds
+    };
+
+    durationSent = true;
+
+    try {
+      if (navigator.sendBeacon) {
+        var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        navigator.sendBeacon('track.php', blob);
+      } else {
+        fetch('track.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          keepalive: true
+        }).catch(function () {});
+      }
+    } catch (e) {
+    }
   }
 
   function requestGeo() {
@@ -71,6 +103,9 @@
   document.addEventListener('DOMContentLoaded', function () {
     trackBasic();
   });
+
+  window.addEventListener('pagehide', sendDuration);
+  window.addEventListener('beforeunload', sendDuration);
 
   window.Tracker = {
     trackBasic: trackBasic,

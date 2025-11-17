@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS visits (
   language VARCHAR(20) DEFAULT NULL,
   screen_width INT DEFAULT NULL,
   screen_height INT DEFAULT NULL,
+  duration_seconds INT UNSIGNED DEFAULT NULL,
+  visit_count INT UNSIGNED NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -34,3 +36,15 @@ CREATE TABLE IF NOT EXISTS admin_users (
 CREATE INDEX idx_visits_created_at ON visits (created_at);
 CREATE INDEX idx_visits_country ON visits (country);
 CREATE INDEX idx_visits_device_type ON visits (device_type);
+
+CREATE TABLE IF NOT EXISTS share_links (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(150) NOT NULL UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT DEFAULT NULL,
+  image_path VARCHAR(255) DEFAULT NULL,
+  target_url TEXT NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

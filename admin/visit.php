@@ -4,6 +4,8 @@ declare(strict_types=1);
 require __DIR__ . '/_bootstrap.php';
 require_login();
 
+$pdo = db();
+
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
     http_response_code(404);
@@ -11,7 +13,7 @@ if ($id <= 0) {
     exit;
 }
 
-$stmt = db()->prepare('SELECT * FROM visits WHERE id = :id');
+$stmt = $pdo->prepare('SELECT * FROM visits WHERE id = :id');
 $stmt->execute([':id' => $id]);
 $visit = $stmt->fetch();
 
@@ -20,6 +22,14 @@ if (!$visit) {
     echo 'Visit not found.';
     exit;
 }
+// Total visits from this IP
+$ipVisitCount = null;
+if (!empty($visit['ip'])) {
+    $cstmt = $pdo->prepare('SELECT COUNT(*) FROM visits WHERE ip = :ip');
+    $cstmt->execute([':ip' => $visit['ip']]);
+    $ipVisitCount = (int)$cstmt->fetchColumn();
+}
+
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,6 +38,18 @@ if (!$visit) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
+            /* Light theme (default) */
+            --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 45%, #f3f4f6 100%);
+            --header-bg: #ffffff;
+            --card-bg: #ffffff;
+            --border-subtle: rgba(148, 163, 184, 0.35);
+            --text-main: #0f172a;
+            --text-muted: #6b7280;
+            --accent: #22c55e;
+        }
+
+        :root[data-theme="dark"] {
+            /* Dark theme */
             --bg-gradient: radial-gradient(circle at top left, #020617 0, #020617 50%, #000000 100%);
             --header-bg: rgba(15, 23, 42, 0.98);
             --card-bg: rgba(15, 23, 42, 0.96);
@@ -88,9 +110,30 @@ if (!$visit) {
             max-width: 520px;
             overflow-wrap: anywhere;
         }
+
+        .theme-toggle {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
+        .theme-toggle span {
+            font-weight: 500;
+            margin-right: 4px;
+        }
     </style>
 </head>
 <body>
+<button type="button" class="theme-toggle" data-theme-toggle>
+    <span data-theme-toggle-label>Light</span> mode
+</button>
 <header>
     <a href="/admin/dashboard">&larr; Back to dashboard</a>
 </header>
@@ -104,6 +147,17 @@ if (!$visit) {
         <tr><th>City</th><td><?= h($visit['city'] ?? '') ?></td></tr>
         <tr><th>Latitude</th><td><?= h($visit['latitude'] !== null ? (string)$visit['latitude'] : '') ?></td></tr>
         <tr><th>Longitude</th><td><?= h($visit['longitude'] !== null ? (string)$visit['longitude'] : '') ?></td></tr>
+        <tr><th>Duration</th><td><?= $visit['duration_seconds'] !== null ? h((string)$visit['duration_seconds']) . ' s' : '' ?></td></tr>
+        <tr><th>Total visits from this IP</th><td><?= $ipVisitCount !== null ? (int)$ipVisitCount : '' ?></td></tr>
+        <?php
+        $mapUrl = '';
+        if ($visit['latitude'] !== null && $visit['longitude'] !== null) {
+            $mapUrl = 'https://www.google.com/maps?q=' . rawurlencode((string)$visit['latitude'] . ',' . (string)$visit['longitude']);
+        } elseif (!empty($visit['ip'])) {
+            $mapUrl = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode((string)$visit['ip']);
+        }
+        ?>
+        <tr><th>Map</th><td><?php if ($mapUrl !== ''): ?><a href="<?= h($mapUrl) ?>" target="_blank">Open map</a><?php endif; ?></td></tr>
         <tr><th>ISP</th><td><?= h($visit['isp'] ?? '') ?></td></tr>
         <tr><th>Browser</th><td><?= h($visit['browser_name'] ?? '') . ' ' . h($visit['browser_version'] ?? '') ?></td></tr>
         <tr><th>OS</th><td><?= h($visit['os_name'] ?? '') . ' ' . h($visit['os_version'] ?? '') ?></td></tr>
@@ -115,5 +169,6 @@ if (!$visit) {
         <tr><th>User agent</th><td><?= h($visit['user_agent'] ?? '') ?></td></tr>
     </table>
 </div>
+<script src="/assets/js/theme.js"></script>
 </body>
 </html>

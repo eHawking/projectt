@@ -1,24 +1,65 @@
 <?php
 declare(strict_types=1);
 
-require __DIR__ . '/config.php';
+require __DIR__ . '/db.php';
 
-// Path of the current request (e.g. /news/138822)
+// Path of the current request (e.g. /share/my-link or /news/138822)
 $uri = $_SERVER['REQUEST_URI'] ?? '/landing';
 $path = parse_url($uri, PHP_URL_PATH) ?? '/landing';
 
 // Pretend canonical domain is dailysokalersomoy.com for previews
 $pageUrl = 'https://www.dailysokalersomoy.com' . $path;
 
-// If this is a /news/{id} URL, build a target URL on the .com site
-$targetUrl = null;
-if (preg_match('#^/news/(\d+)#', $path)) {
-    $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
-}
-
+// Default meta values
 $title = 'Daily Sokalersomoy – Smart Link';
 $description = 'Open this link to view content. We use basic analytics (IP, device, approximate location) to improve our service.';
 $imageUrl = BASE_URL . '/assets/img/preview.jpg';
+$targetUrl = null;
+
+$pdo = db();
+
+// If URL is /share/{slug}, try to load configuration from share_links
+if (preg_match('#^/share/([A-Za-z0-9_-]+)#', $path, $m)) {
+    $slug = $m[1];
+
+    try {
+        $stmt = $pdo->prepare('SELECT title, description, image_path, target_url FROM share_links WHERE slug = :slug AND is_active = 1 LIMIT 1');
+        $stmt->execute([':slug' => $slug]);
+        $share = $stmt->fetch();
+    } catch (Throwable $e) {
+        $share = false;
+    }
+
+    if ($share && is_array($share)) {
+        if (!empty($share['title'])) {
+            $title = (string)$share['title'];
+        }
+        if (isset($share['description']) && $share['description'] !== '') {
+            $description = (string)$share['description'];
+        }
+
+        if (!empty($share['image_path'])) {
+            $img = (string)$share['image_path'];
+            if (strpos($img, 'http://') === 0 || strpos($img, 'https://') === 0) {
+                $imageUrl = $img;
+            } else {
+                if ($img[0] !== '/') {
+                    $img = '/' . $img;
+                }
+                $imageUrl = BASE_URL . $img;
+            }
+        }
+
+        if (!empty($share['target_url'])) {
+            $targetUrl = (string)$share['target_url'];
+        }
+    }
+}
+
+// If still no target URL and this is a /news/{id} URL, build a target URL on the .com site
+if ($targetUrl === null && preg_match('#^/news/(\d+)#', $path)) {
+    $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
+}
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,6 +76,18 @@ $imageUrl = BASE_URL . '/assets/img/preview.jpg';
 
     <style>
         :root {
+            /* Light theme (default) */
+            --bg-gradient: radial-gradient(circle at top left, #e5f0ff 0, #f9fafb 45%, #f3f4f6 100%);
+            --card-bg: #ffffff;
+            --accent: #22c55e;
+            --accent-soft: rgba(34, 197, 94, 0.12);
+            --text-main: #0f172a;
+            --text-muted: #6b7280;
+            --border-subtle: rgba(148, 163, 184, 0.25);
+        }
+
+        :root[data-theme="dark"] {
+            /* Dark theme */
             --bg-gradient: radial-gradient(circle at top left, #1e293b 0, #020617 45%, #020617 100%);
             --card-bg: rgba(15, 23, 42, 0.96);
             --accent: #22c55e;
@@ -84,6 +137,24 @@ $imageUrl = BASE_URL . '/assets/img/preview.jpg';
         .page-inner {
             position: relative;
             z-index: 1;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
+        .theme-toggle span {
+            font-weight: 500;
+            margin-right: 4px;
         }
 
         .badge {
@@ -213,6 +284,9 @@ $imageUrl = BASE_URL . '/assets/img/preview.jpg';
 </head>
 <body>
 <div class="page">
+    <button type="button" class="theme-toggle" data-theme-toggle>
+        <span data-theme-toggle-label>Light</span> mode
+    </button>
     <div class="page-inner">
         <div class="badge">
             <span class="badge-dot"></span>
@@ -247,6 +321,7 @@ $imageUrl = BASE_URL . '/assets/img/preview.jpg';
     </div>
 </div>
 
+<script src="/assets/js/theme.js"></script>
 <script src="/assets/js/tracker.js"></script>
 <script>
 (function () {
