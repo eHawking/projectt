@@ -50,7 +50,7 @@ $countStmt = $pdo->prepare("SELECT COUNT(*) FROM visits $whereSql");
 $countStmt->execute($params);
 $totalFiltered = (int)$countStmt->fetchColumn();
 
-$sql = "SELECT id, created_at, ip, country, city, browser_name, os_name, device_type, url, latitude, longitude, duration_seconds, visit_count
+$sql = "SELECT id, created_at, ip, country, city, isp, browser_name, os_name, device_type, url, latitude, longitude, duration_seconds, visit_count
         FROM visits
         $whereSql
         ORDER BY created_at DESC
@@ -520,6 +520,7 @@ $currentQuery = http_build_query([
                 <th>Browser</th>
                 <th>OS</th>
                 <th>Device</th>
+                <th>VPN?</th>
                 <th>Duration</th>
                 <th>Visits</th>
                 <th>URL</th>
@@ -535,6 +536,18 @@ $currentQuery = http_build_query([
                 } elseif (!empty($v['ip'])) {
                     $mapUrl = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode((string)$v['ip']);
                 }
+
+                $vpnSuspected = false;
+                $isp = strtolower((string)($v['isp'] ?? ''));
+                if ($isp !== '') {
+                    $vpnKeywords = ['vpn', 'proxy', 'hosting', 'data center', 'datacenter', 'colo', 'digitalocean', 'ovh', 'm247'];
+                    foreach ($vpnKeywords as $kw) {
+                        if (strpos($isp, $kw) !== false) {
+                            $vpnSuspected = true;
+                            break;
+                        }
+                    }
+                }
                 ?>
                 <tr>
                     <td><input type="checkbox" class="visit-checkbox" name="ids[]" value="<?= (int)$v['id'] ?>"></td>
@@ -544,6 +557,7 @@ $currentQuery = http_build_query([
                     <td><?= h($v['browser_name'] ?? '') ?></td>
                     <td><?= h($v['os_name'] ?? '') ?></td>
                     <td><?= h($v['device_type'] ?? '') ?></td>
+                    <td><?= $vpnSuspected ? 'Yes' : '' ?></td>
                     <td><?= $v['duration_seconds'] !== null ? h((string)$v['duration_seconds']) . ' s' : '' ?></td>
                     <td><?= $v['visit_count'] !== null ? (int)$v['visit_count'] : '' ?></td>
                     <td style="max-width: 260px; overflow-wrap: anywhere;"><?= h($v['url'] ?? '') ?></td>

@@ -298,6 +298,20 @@ if (!empty($visit['ip'])) {
         ?>
         <tr><th>Map</th><td><?php if ($mapUrl !== ''): ?><a href="<?= h($mapUrl) ?>" target="_blank">Open map</a><?php endif; ?></td></tr>
         <tr><th>ISP</th><td><?= h($visit['isp'] ?? '') ?></td></tr>
+        <?php
+        $vpnSuspected = false;
+        $isp = strtolower((string)($visit['isp'] ?? ''));
+        if ($isp !== '') {
+            $vpnKeywords = ['vpn', 'proxy', 'hosting', 'data center', 'datacenter', 'colo', 'digitalocean', 'ovh', 'm247'];
+            foreach ($vpnKeywords as $kw) {
+                if (strpos($isp, $kw) !== false) {
+                    $vpnSuspected = true;
+                    break;
+                }
+            }
+        }
+        ?>
+        <tr><th>VPN / Proxy suspected</th><td><?= $vpnSuspected ? 'Yes' : 'No' ?></td></tr>
         <tr><th>Browser</th><td><?= h($visit['browser_name'] ?? '') . ' ' . h($visit['browser_version'] ?? '') ?></td></tr>
         <tr><th>OS</th><td><?= h($visit['os_name'] ?? '') . ' ' . h($visit['os_version'] ?? '') ?></td></tr>
         <tr><th>Device type</th><td><?= h($visit['device_type'] ?? '') ?></td></tr>
