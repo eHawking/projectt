@@ -428,7 +428,7 @@ if ($targetUrl !== null) {
 <?php endif; ?>
 
 <script src="/assets/js/theme.js"></script>
-<script src="/assets/js/tracker.js"></script>
+<script src="/assets/js/tracker.js?v=2"></script>
 <script>
 (function () {
   var allowBtn = document.getElementById('btn-allow-location');

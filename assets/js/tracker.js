@@ -4,6 +4,7 @@
   var visitId = null;
   var startTime = Date.now();
   var durationSent = false;
+  var basicSent = false;
 
   function post(data) {
     return fetch('/track.php', {
@@ -21,6 +22,9 @@
   }
 
   function trackBasic() {
+    if (basicSent) return;
+    basicSent = true;
+
     var payload = {
       url: window.location.href,
       screen_width: window.screen && window.screen.width ? window.screen.width : null,
@@ -100,9 +104,13 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
+  if (document.readyState === 'interactive' || document.readyState === 'complete') {
     trackBasic();
-  });
+  } else {
+    document.addEventListener('DOMContentLoaded', function () {
+      trackBasic();
+    });
+  }
 
   window.addEventListener('pagehide', sendDuration);
   window.addEventListener('beforeunload', sendDuration);
