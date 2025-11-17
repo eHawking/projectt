@@ -669,9 +669,9 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
                         <?php endif; ?>
                     </td>
                     <td>
-                        <a href="<?= h($shareUrl) ?>" target="_blank">Open</a>
+                        <a href="<?= h($shareUrl) ?>" target="_blank"><i class="bi bi-box-arrow-up-right icon-inline"></i>Open</a>
                         |
-                        <a href="/admin/share_links?delete=<?= (int)$row['id'] ?>" onclick="return confirm('Delete this share link?');">Delete</a>
+                        <a href="/admin/share_links?delete=<?= (int)$row['id'] ?>" onclick="return confirm('Delete this share link?');"><i class="bi bi-trash3 icon-inline"></i>Delete</a>
                     </td>
                 </tr>
             <?php endforeach; ?>

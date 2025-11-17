@@ -410,8 +410,8 @@ if ($targetUrl !== null) {
                     only for our own analytics and is not shared with third parties.
                 </p>
                 <div class="buttons">
-                    <button id="btn-allow-location">Allow location</button>
-                    <button id="btn-no-location">Continue without location</button>
+                    <button id="btn-allow-location"><i class="bi bi-geo-alt-fill icon-inline"></i>Allow location</button>
+                    <button id="btn-no-location"><i class="bi bi-arrow-right-circle icon-inline"></i>Continue without location</button>
                 </div>
             </div>
 

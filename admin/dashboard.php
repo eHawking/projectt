@@ -554,8 +554,8 @@ $currentQuery = http_build_query([
                 <option value="tablet" <?= $deviceType === 'tablet' ? 'selected' : '' ?>>Tablet</option>
             </select>
 
-            <button type="submit">Apply</button>
-            <a href="/admin/export?<?= http_build_query(['date_from' => $dateFrom, 'date_to' => $dateTo, 'country' => $country, 'device_type' => $deviceType]) ?>" style="margin-left: 10px;">Export CSV</a>
+            <button type="submit"><i class="bi bi-funnel icon-inline"></i>Apply</button>
+            <a href="/admin/export?<?= http_build_query(['date_from' => $dateFrom, 'date_to' => $dateTo, 'country' => $country, 'device_type' => $deviceType]) ?>" style="margin-left: 10px;"><i class="bi bi-file-earmark-spreadsheet icon-inline"></i>Export CSV</a>
         </form>
     </div>
 
@@ -615,7 +615,7 @@ $currentQuery = http_build_query([
                     <td style="max-width: 260px; overflow-wrap: anywhere;"><?= h($v['url'] ?? '') ?></td>
                     <td>
                         <?php if ($mapUrl !== ''): ?>
-                            <a href="<?= h($mapUrl) ?>" target="_blank">Map</a>
+                            <a href="<?= h($mapUrl) ?>" target="_blank"><i class="bi bi-geo-alt icon-inline"></i>Map</a>
                         <?php else: ?>
                             -
                         <?php endif; ?>
@@ -708,7 +708,7 @@ $currentQuery = http_build_query([
             <?php endif; ?>
         </div>
         <div class="bulk-actions">
-            <button type="submit" onclick="return confirm('Delete selected visits? This cannot be undone.');">Delete selected</button>
+            <button type="submit" onclick="return confirm('Delete selected visits? This cannot be undone.');"><i class="bi bi-trash3 icon-inline"></i>Delete selected</button>
         </div>
     </form>
 

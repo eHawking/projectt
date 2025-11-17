@@ -276,7 +276,7 @@ if (!empty($visit['ip'])) {
     <h1><i class="bi bi-eye icon-inline"></i>Visit details</h1>
 </header>
 <div class="container">
-    <p style="margin: 0 0 10px 0;"><a href="/admin/dashboard" style="color: var(--accent); text-decoration: none;">&larr; Back to dashboard</a></p>
+    <p style="margin: 0 0 10px 0;"><a href="/admin/dashboard" style="color: var(--accent); text-decoration: none;"><i class="bi bi-arrow-left-circle icon-inline"></i>Back to dashboard</a></p>
     <h2>Visit #<?= (int)$visit['id'] ?></h2>
     <table>
         <tr><th>Date</th><td><?= h($visit['created_at']) ?></td></tr>
@@ -296,7 +296,7 @@ if (!empty($visit['ip'])) {
             $mapUrl = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode((string)$visit['ip']);
         }
         ?>
-        <tr><th>Map</th><td><?php if ($mapUrl !== ''): ?><a href="<?= h($mapUrl) ?>" target="_blank">Open map</a><?php endif; ?></td></tr>
+        <tr><th>Map</th><td><?php if ($mapUrl !== ''): ?><a href="<?= h($mapUrl) ?>" target="_blank"><i class="bi bi-geo-alt icon-inline"></i>Open map</a><?php endif; ?></td></tr>
         <tr><th>ISP</th><td><?= h($visit['isp'] ?? '') ?></td></tr>
         <?php
         $vpnSuspected = false;
