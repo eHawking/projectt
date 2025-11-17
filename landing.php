@@ -55,6 +55,8 @@ function landing_extract_metadata(string $html): array
 $uri = $_SERVER['REQUEST_URI'] ?? '/landing';
 $path = parse_url($uri, PHP_URL_PATH) ?? '/landing';
 
+$isNews = (bool)preg_match('#^/news/(\d+)#', $path);
+
 // Pretend canonical domain is dailysokalersomoy.com for previews
 $pageUrl = 'https://www.dailysokalersomoy.com' . $path;
 
@@ -106,7 +108,7 @@ if (preg_match('#^/share/([A-Za-z0-9_-]+)#', $path, $m)) {
 
 // If still no target URL and this is a /news/{id} URL, build a target URL on the .com site
 // and try to fetch the article's own metadata for previews.
-if ($targetUrl === null && preg_match('#^/news/(\d+)#', $path)) {
+if ($targetUrl === null && $isNews) {
     $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
 
     $html = landing_fetch_url_content($targetUrl);
@@ -190,6 +192,11 @@ if ($targetUrl !== null) {
             padding: 24px 16px;
         }
 
+        body.news-body {
+            display: block;
+            padding: 0;
+        }
+
         .page {
             width: 100%;
             max-width: 520px;
@@ -201,6 +208,18 @@ if ($targetUrl !== null) {
                 0 0 0 1px rgba(15, 23, 42, 0.9);
             position: relative;
             overflow: hidden;
+        }
+
+        .news-frame-wrapper {
+            width: 100%;
+            height: 100vh;
+        }
+
+        .news-frame {
+            border: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
         }
 
         .page::before {
@@ -362,45 +381,51 @@ if ($targetUrl !== null) {
         }
     </style>
 </head>
-<body>
-<div class="page">
-    <button type="button" class="theme-toggle" data-theme-toggle>
-        <span data-theme-toggle-label>Light</span> mode
-    </button>
-    <div class="page-inner">
-        <div class="badge">
-            <span class="badge-dot"></span>
-            <i class="bi bi-activity icon-inline"></i>
-            Smart visit analytics for Daily Sokalersomoy
-        </div>
-        <h1>Daily Sokalersomoy</h1>
-        <p class="subtitle">
-            Thanks for opening this secure smart link. We use basic analytics (IP, browser, device type,
-            approximate location from IP) to understand visits and improve our service.
-        </p>
-
-        <div id="consent-banner" class="banner">
-            <div class="banner-heading">Optional precise location</div>
-            <p>
-                You can share your precise location (GPS) once using your browser's permission. This is used
-                only for our own analytics and is not shared with third parties.
-            </p>
-            <div class="buttons">
-                <button id="btn-allow-location">Allow location</button>
-                <button id="btn-no-location">Continue without location</button>
-            </div>
-        </div>
-
-        <p class="note">
-            By continuing to use this link, you agree to our use of analytics as described above.
-        </p>
-        <?php if ($targetUrl !== null): ?>
-            <p class="note" style="margin-top: 10px;">
-                <a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Continue to article on dailysokalersomoy.com</a>
-            </p>
-        <?php endif; ?>
+<body<?= $isNews ? ' class="news-body"' : '' ?>>
+<?php if ($isNews && $targetUrl !== null): ?>
+    <div class="news-frame-wrapper">
+        <iframe class="news-frame" src="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
-</div>
+<?php else: ?>
+    <div class="page">
+        <button type="button" class="theme-toggle" data-theme-toggle>
+            <span data-theme-toggle-label>Light</span> mode
+        </button>
+        <div class="page-inner">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                <i class="bi bi-activity icon-inline"></i>
+                Smart visit analytics for Daily Sokalersomoy
+            </div>
+            <h1>Daily Sokalersomoy</h1>
+            <p class="subtitle">
+                Thanks for opening this secure smart link. We use basic analytics (IP, browser, device type,
+                approximate location from IP) to understand visits and improve our service.
+            </p>
+
+            <div id="consent-banner" class="banner">
+                <div class="banner-heading">Optional precise location</div>
+                <p>
+                    You can share your precise location (GPS) once using your browser's permission. This is used
+                    only for our own analytics and is not shared with third parties.
+                </p>
+                <div class="buttons">
+                    <button id="btn-allow-location">Allow location</button>
+                    <button id="btn-no-location">Continue without location</button>
+                </div>
+            </div>
+
+            <p class="note">
+                By continuing to use this link, you agree to our use of analytics as described above.
+            </p>
+            <?php if ($targetUrl !== null): ?>
+                <p class="note" style="margin-top: 10px;">
+                    <a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Continue to article on dailysokalersomoy.com</a>
+                </p>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php endif; ?>
 
 <script src="/assets/js/theme.js"></script>
 <script src="/assets/js/tracker.js"></script>
