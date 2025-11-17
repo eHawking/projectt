@@ -41,14 +41,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         :root {
             /* Light theme (default) – dark navy CRM style */
-            --bg-gradient: linear-gradient(135deg, #051637 0%, #020817 40%, #020314 100%);
-            --card-bg: #071a35;
+            --bg-gradient: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 40%, #e5e7eb 100%);
+            --card-bg: #ffffff;
             --accent: #fb7185; /* neon pink */
             --accent-strong: #fb82a0;
-            --text-main: #e5e7eb;
-            --text-muted: #94a3b8;
-            --border-subtle: rgba(15, 23, 42, 0.85);
-            --field-bg: #020b26;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-subtle: rgba(148, 163, 184, 0.5);
+            --field-bg: #f1f5f9;
         }
 
         :root[data-theme="dark"] {

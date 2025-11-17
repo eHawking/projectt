@@ -40,15 +40,15 @@ if (!empty($visit['ip'])) {
     <style>
         :root {
             /* Light theme (default) – dark navy CRM style */
-            --bg-gradient: linear-gradient(135deg, #051637 0%, #020817 40%, #020314 100%);
-            --header-bg: #051327;
-            --header-fg: #f9fafb;
-            --card-bg: #071a35;
-            --border-subtle: rgba(15, 23, 42, 0.85);
-            --text-main: #e5e7eb;
-            --text-muted: #94a3b8;
+            --bg-gradient: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 40%, #e5e7eb 100%);
+            --header-bg: #ffffff;
+            --header-fg: #0f172a;
+            --card-bg: #ffffff;
+            --border-subtle: rgba(148, 163, 184, 0.6);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
             --accent: #fb7185; /* neon pink */
-            --table-row-alt-bg: #051426;
+            --table-row-alt-bg: #f8fafc;
         }
 
         :root[data-theme="dark"] {
