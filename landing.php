@@ -394,7 +394,12 @@ if ($targetUrl !== null) {
     </div>
 <?php elseif ($isNews && $targetUrl !== null && $vpnOrProxyDetected): ?>
     <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#000000;color:#f9fafb;font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:0.95rem;text-align:center;">
-        <div>Disconnect your VPN or proxy to read this news.</div>
+        <div>
+            <div style="margin-bottom:16px;">Disconnect your VPN or proxy to read this news.</div>
+            <button type="button" onclick="location.reload();" style="padding:8px 18px;border-radius:999px;border:none;background:#ffffff;color:#000000;font-size:0.85rem;cursor:pointer;">
+                Reload
+            </button>
+        </div>
     </div>
 <?php else: ?>
     <div class="page">
