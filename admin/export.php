@@ -33,7 +33,21 @@ if ($deviceType !== '') {
 
 $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
-$sql = "SELECT created_at, ip, country, region, city, latitude, longitude, isp, browser_name, browser_version, os_name, os_version, device_type, url, referer, language, screen_width, screen_height, duration_seconds, visit_count FROM visits $whereSql ORDER BY created_at DESC";
+$hasVpnDetectedColumn = false;
+try {
+    $pdo->query('SELECT vpn_detected FROM visits LIMIT 0');
+    $hasVpnDetectedColumn = true;
+} catch (Throwable $e) {
+    $hasVpnDetectedColumn = false;
+}
+
+$select = 'created_at, ip, country, region, city, latitude, longitude, isp';
+if ($hasVpnDetectedColumn) {
+    $select .= ', vpn_detected';
+}
+$select .= ', browser_name, browser_version, os_name, os_version, device_type, url, referer, language, screen_width, screen_height, duration_seconds, visit_count';
+
+$sql = "SELECT $select FROM visits $whereSql ORDER BY created_at DESC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -44,10 +58,15 @@ header('Content-Disposition: attachment; filename="visits_export.csv"');
 
 $out = fopen('php://output', 'w');
 
-fputcsv($out, ['created_at','ip','country','region','city','latitude','longitude','isp','browser','browser_version','os','os_version','device_type','url','referer','language','screen_width','screen_height','duration_seconds','visit_count']);
+$header = ['created_at','ip','country','region','city','latitude','longitude','isp'];
+if ($hasVpnDetectedColumn) {
+    $header[] = 'vpn_detected';
+}
+$header = array_merge($header, ['browser','browser_version','os','os_version','device_type','url','referer','language','screen_width','screen_height','duration_seconds','visit_count']);
+fputcsv($out, $header);
 
 foreach ($rows as $r) {
-    fputcsv($out, [
+    $row = [
         $r['created_at'],
         $r['ip'],
         $r['country'],
@@ -56,6 +75,11 @@ foreach ($rows as $r) {
         $r['latitude'],
         $r['longitude'],
         $r['isp'],
+    ];
+    if ($hasVpnDetectedColumn) {
+        $row[] = $r['vpn_detected'];
+    }
+    $row = array_merge($row, [
         $r['browser_name'],
         $r['browser_version'],
         $r['os_name'],
@@ -69,6 +93,7 @@ foreach ($rows as $r) {
         $r['duration_seconds'],
         $r['visit_count'],
     ]);
+    fputcsv($out, $row);
 }
 
 fclose($out);

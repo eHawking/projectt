@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 require __DIR__ . '/db.php';
-require __DIR__ . '/geo_maxmind.php';
 
 function landing_fetch_url_content(string $url): ?string
 {
@@ -51,15 +50,23 @@ function landing_extract_metadata(string $html): array
         'image' => $image,
     ];
 }
-
+ 
+// Path of the current request (e.g. /share/my-link or /news/138822)
 $uri = $_SERVER['REQUEST_URI'] ?? '/landing';
 $path = parse_url($uri, PHP_URL_PATH) ?? '/landing';
 
 $isNews = (bool)preg_match('#^/news/(\d+)#', $path);
 
+$vpnOrProxyDetected = false;
+if ($isNews) {
+    $clientIp = get_client_ip();
+    $vpnOrProxyDetected = detect_vpn_proxy($clientIp);
+}
+
 // Pretend canonical domain is dailysokalersomoy.com for previews
 $pageUrl = 'https://www.dailysokalersomoy.com' . $path;
 
+// Default meta values
 $title = 'Daily Sokalersomoy – Smart Link';
 $description = 'Open this link to view content. We use basic analytics (IP, device, approximate location) to improve our service.';
 $imageUrl = BASE_URL . '/assets/img/preview.jpg';
@@ -67,6 +74,7 @@ $targetUrl = null;
 
 $pdo = db();
 
+// If URL is /share/{slug}, try to load configuration from share_links
 if (preg_match('#^/share/([A-Za-z0-9_-]+)#', $path, $m)) {
     $slug = $m[1];
 
@@ -104,6 +112,8 @@ if (preg_match('#^/share/([A-Za-z0-9_-]+)#', $path, $m)) {
     }
 }
 
+// If still no target URL and this is a /news/{id} URL, build a target URL on the .com site
+// and try to fetch the article's own metadata for previews.
 if ($targetUrl === null && $isNews) {
     $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
 
@@ -122,19 +132,10 @@ if ($targetUrl === null && $isNews) {
     }
 }
 
+// For share links, if we have a configured target URL, use it as the canonical URL
+// for previews (e.g. WhatsApp) so the shared URL matches the article URL.
 if ($targetUrl !== null) {
     $pageUrl = $targetUrl;
-}
-
-$vpnBlocked = false;
-if ($isNews && $targetUrl !== null && function_exists('maxmind_geo_ip') && function_exists('maxmind_ip_is_vpn_or_proxy')) {
-    $ipForVpn = get_client_ip();
-    if ($ipForVpn !== '') {
-        $mmVpn = maxmind_geo_ip($ipForVpn);
-        if ($mmVpn && maxmind_ip_is_vpn_or_proxy($mmVpn)) {
-            $vpnBlocked = true;
-        }
-    }
 }
 ?><!DOCTYPE html>
 <html lang="en">
@@ -387,13 +388,13 @@ if ($isNews && $targetUrl !== null && function_exists('maxmind_geo_ip') && funct
     </style>
 </head>
 <body<?= $isNews ? ' class="news-body"' : '' ?>>
-<?php if ($isNews && $targetUrl !== null && !$vpnBlocked): ?>
+<?php if ($isNews && $targetUrl !== null && !$vpnOrProxyDetected): ?>
     <div class="news-frame-wrapper">
         <iframe class="news-frame" src="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
-<?php elseif ($isNews && $targetUrl !== null && $vpnBlocked): ?>
-    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#020617;color:#f9fafb;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-        <div>Please disconnect your VPN or proxy to read this news.</div>
+<?php elseif ($isNews && $targetUrl !== null && $vpnOrProxyDetected): ?>
+    <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#000000;color:#f9fafb;font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;font-size:0.95rem;text-align:center;">
+        <div>Disconnect your VPN or proxy to read this news.</div>
     </div>
 <?php else: ?>
     <div class="page">

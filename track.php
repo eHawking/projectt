@@ -2,7 +2,6 @@
 declare(strict_types=1);
 
 require __DIR__ . '/db.php';
-require __DIR__ . '/geo_maxmind.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -71,43 +70,19 @@ $sw = isset($data['screen_width']) ? (int)$data['screen_width'] : null;
 $sh = isset($data['screen_height']) ? (int)$data['screen_height'] : null;
 
 $uaInfo = parse_ua($ua);
-
-$mm = null;
-if (function_exists('maxmind_geo_ip')) {
-    $mm = maxmind_geo_ip($ip);
-}
-
-$vpnDetected = false;
-if ($mm !== null && is_array($mm)) {
-    $geo = [
-        'country' => $mm['country'] ?? null,
-        'region' => $mm['region'] ?? null,
-        'city' => $mm['city'] ?? null,
-        'latitude' => $mm['latitude'] ?? null,
-        'longitude' => $mm['longitude'] ?? null,
-        'isp' => $mm['isp'] ?? null,
-    ];
-    if (function_exists('maxmind_ip_is_vpn_or_proxy') && maxmind_ip_is_vpn_or_proxy($mm)) {
-        $vpnDetected = true;
-    }
-} else {
-    $geo = geo_ip($ip);
-}
+$geo = geo_ip($ip);
+$vpnDetected = detect_vpn_proxy(
+    $ip,
+    $geo['isp'] ?? null,
+    array_key_exists('is_proxy', $geo) ? $geo['is_proxy'] : null,
+    array_key_exists('is_hosting', $geo) ? $geo['is_hosting'] : null
+);
 
 if ($lat === null && isset($geo['latitude'])) {
     $lat = $geo['latitude'];
 }
 if ($lon === null && isset($geo['longitude'])) {
     $lon = $geo['longitude'];
-}
-
-$ispValue = $geo['isp'] ?? null;
-if ($vpnDetected) {
-    if ($ispValue !== null && $ispValue !== '') {
-        $ispValue = 'VPN/Proxy - ' . $ispValue;
-    } else {
-        $ispValue = 'VPN/Proxy';
-    }
 }
 
 $visitCount = 1;
@@ -119,36 +94,68 @@ try {
     $visitCount = 1;
 }
 
+static $hasVpnDetectedColumn = null;
+if ($hasVpnDetectedColumn === null) {
+    try {
+        $pdo->query('SELECT vpn_detected FROM visits LIMIT 0');
+        $hasVpnDetectedColumn = true;
+    } catch (Throwable $e) {
+        $hasVpnDetectedColumn = false;
+    }
+}
+
 try {
-    $sql = 'INSERT INTO visits (
-        ip, country, region, city,
-        latitude, longitude, isp,
-        user_agent, browser_name, browser_version,
-        os_name, os_version, device_type,
-        referer, url, language,
-        screen_width, screen_height,
-        duration_seconds, visit_count,
-        created_at
-    ) VALUES (
-        :ip, :country, :region, :city,
-        :lat, :lon, :isp,
-        :ua, :bname, :bver,
-        :os, :osver, :dtype,
-        :ref, :url, :lang,
-        :sw, :sh,
-        NULL, :vcount,
-        NOW()
-    )';
+    if ($hasVpnDetectedColumn) {
+        $sql = 'INSERT INTO visits (
+            ip, country, region, city,
+            latitude, longitude, isp, vpn_detected,
+            user_agent, browser_name, browser_version,
+            os_name, os_version, device_type,
+            referer, url, language,
+            screen_width, screen_height,
+            duration_seconds, visit_count,
+            created_at
+        ) VALUES (
+            :ip, :country, :region, :city,
+            :lat, :lon, :isp, :vpn,
+            :ua, :bname, :bver,
+            :os, :osver, :dtype,
+            :ref, :url, :lang,
+            :sw, :sh,
+            NULL, :vcount,
+            NOW()
+        )';
+    } else {
+        $sql = 'INSERT INTO visits (
+            ip, country, region, city,
+            latitude, longitude, isp,
+            user_agent, browser_name, browser_version,
+            os_name, os_version, device_type,
+            referer, url, language,
+            screen_width, screen_height,
+            duration_seconds, visit_count,
+            created_at
+        ) VALUES (
+            :ip, :country, :region, :city,
+            :lat, :lon, :isp,
+            :ua, :bname, :bver,
+            :os, :osver, :dtype,
+            :ref, :url, :lang,
+            :sw, :sh,
+            NULL, :vcount,
+            NOW()
+        )';
+    }
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([
+    $params = [
         ':ip' => $ip,
         ':country' => $geo['country'] ?? null,
         ':region' => $geo['region'] ?? null,
         ':city' => $geo['city'] ?? null,
         ':lat' => $lat,
         ':lon' => $lon,
-        ':isp' => $ispValue,
+        ':isp' => $geo['isp'] ?? null,
         ':ua' => $ua,
         ':bname' => $uaInfo['browser_name'] ?? null,
         ':bver' => $uaInfo['browser_version'] ?? null,
@@ -161,7 +168,11 @@ try {
         ':sw' => $sw,
         ':sh' => $sh,
         ':vcount' => $visitCount,
-    ]);
+    ];
+    if ($hasVpnDetectedColumn) {
+        $params[':vpn'] = $vpnDetected ? 1 : 0;
+    }
+    $stmt->execute($params);
 
     $id = (int)$pdo->lastInsertId();
     echo json_encode(['ok' => true, 'id' => $id]);
@@ -249,13 +260,15 @@ function geo_ip(string $ip): array
         'latitude' => null,
         'longitude' => null,
         'isp' => null,
+        'is_proxy' => null,
+        'is_hosting' => null,
     ];
 
     if ($ip === '') {
         return $out;
     }
 
-    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,country,regionName,city,lat,lon,isp';
+    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,country,regionName,city,lat,lon,isp,proxy,hosting';
 
     $context = stream_context_create([
         'http' => [
@@ -279,6 +292,8 @@ function geo_ip(string $ip): array
     $out['latitude'] = isset($data['lat']) ? (float)$data['lat'] : null;
     $out['longitude'] = isset($data['lon']) ? (float)$data['lon'] : null;
     $out['isp'] = $data['isp'] ?? null;
+    $out['is_proxy'] = array_key_exists('proxy', $data) ? (bool)$data['proxy'] : null;
+    $out['is_hosting'] = array_key_exists('hosting', $data) ? (bool)$data['hosting'] : null;
 
     return $out;
 }

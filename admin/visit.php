@@ -405,13 +405,17 @@ function render_visit_country_with_flag(?string $country): string
         <tr><th>ISP</th><td><?= h($visit['isp'] ?? '') ?></td></tr>
         <?php
         $vpnSuspected = false;
-        $isp = strtolower((string)($visit['isp'] ?? ''));
-        if ($isp !== '') {
-            $vpnKeywords = ['vpn', 'proxy', 'hosting', 'data center', 'datacenter', 'colo', 'digitalocean', 'ovh', 'm247'];
-            foreach ($vpnKeywords as $kw) {
-                if (strpos($isp, $kw) !== false) {
-                    $vpnSuspected = true;
-                    break;
+        if (array_key_exists('vpn_detected', $visit) && $visit['vpn_detected'] !== null) {
+            $vpnSuspected = (bool)$visit['vpn_detected'];
+        } else {
+            $isp = strtolower((string)($visit['isp'] ?? ''));
+            if ($isp !== '') {
+                $vpnKeywords = ['vpn', 'proxy', 'hosting', 'data center', 'datacenter', 'colo', 'digitalocean', 'ovh', 'm247'];
+                foreach ($vpnKeywords as $kw) {
+                    if (strpos($isp, $kw) !== false) {
+                        $vpnSuspected = true;
+                        break;
+                    }
                 }
             }
         }
