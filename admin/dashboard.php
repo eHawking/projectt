@@ -51,17 +51,28 @@ $countStmt->execute($params);
 $totalFiltered = (int)$countStmt->fetchColumn();
 
 $hasVpnDetectedColumn = false;
+$hasVpnMethodColumn = false;
 try {
     $pdo->query('SELECT vpn_detected FROM visits LIMIT 0');
     $hasVpnDetectedColumn = true;
 } catch (Throwable $e) {
     $hasVpnDetectedColumn = false;
 }
-
-$selectFields = 'id, created_at, ip, country, city, isp, browser_name, os_name, device_type, url, latitude, longitude, duration_seconds, visit_count';
-if ($hasVpnDetectedColumn) {
-    $selectFields = 'id, created_at, ip, country, city, isp, vpn_detected, browser_name, os_name, device_type, url, latitude, longitude, duration_seconds, visit_count';
+try {
+    $pdo->query('SELECT vpn_method FROM visits LIMIT 0');
+    $hasVpnMethodColumn = true;
+} catch (Throwable $e) {
+    $hasVpnMethodColumn = false;
 }
+
+$selectFields = 'id, created_at, ip, country, city, isp';
+if ($hasVpnDetectedColumn) {
+    $selectFields .= ', vpn_detected';
+}
+if ($hasVpnMethodColumn) {
+    $selectFields .= ', vpn_method';
+}
+$selectFields .= ', browser_name, os_name, device_type, url, latitude, longitude, duration_seconds, visit_count';
 
 $sql = "SELECT $selectFields
         FROM visits
@@ -795,8 +806,12 @@ function render_device_with_icon(?string $deviceType): string
                 }
 
                 $vpnSuspected = false;
+                $vpnMethodLabel = '';
                 if (array_key_exists('vpn_detected', $v) && $v['vpn_detected'] !== null) {
                     $vpnSuspected = (bool)$v['vpn_detected'];
+                    if ($vpnSuspected && array_key_exists('vpn_method', $v) && $v['vpn_method'] !== null && $v['vpn_method'] !== '') {
+                        $vpnMethodLabel = (string)$v['vpn_method'];
+                    }
                 } else {
                     $isp = strtolower((string)($v['isp'] ?? ''));
                     if ($isp !== '') {
@@ -804,6 +819,7 @@ function render_device_with_icon(?string $deviceType): string
                         foreach ($vpnKeywords as $kw) {
                             if (strpos($isp, $kw) !== false) {
                                 $vpnSuspected = true;
+                                $vpnMethodLabel = 'ISP keywords';
                                 break;
                             }
                         }
@@ -818,7 +834,11 @@ function render_device_with_icon(?string $deviceType): string
                     <td><?= h($v['browser_name'] ?? '') ?></td>
                     <td><?= h($v['os_name'] ?? '') ?></td>
                     <td><?= render_device_with_icon($v['device_type'] ?? null) ?></td>
-                    <td><?= $vpnSuspected ? 'Yes' : '' ?></td>
+                    <td>
+                        <?php if ($vpnSuspected): ?>
+                            Yes<?= $vpnMethodLabel !== '' ? ' (' . h($vpnMethodLabel) . ')' : '' ?>
+                        <?php endif; ?>
+                    </td>
                     <td><?= $v['duration_seconds'] !== null ? h((string)$v['duration_seconds']) . ' s' : '' ?></td>
                     <td><?= $v['visit_count'] !== null ? (int)$v['visit_count'] : '' ?></td>
                     <td style="max-width: 260px; overflow-wrap: anywhere;"><?= h($v['url'] ?? '') ?></td>
@@ -889,7 +909,11 @@ function render_device_with_icon(?string $deviceType): string
                     </div>
                     <div class="record-row">
                         <div class="record-label">VPN?</div>
-                        <div class="record-value"><?= $vpnSuspected ? 'Yes' : '' ?></div>
+                        <div class="record-value">
+                            <?php if ($vpnSuspected): ?>
+                                Yes<?= $vpnMethodLabel !== '' ? ' (' . h($vpnMethodLabel) . ')' : '' ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                     <div class="record-row">
                         <div class="record-label">Duration</div>

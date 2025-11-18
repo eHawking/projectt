@@ -99,6 +99,74 @@ function detect_vpn_proxy(string $ip, ?string $isp = null, ?bool $proxyFlag = nu
     return false;
 }
 
+function detect_vpn_proxy_info(string $ip, ?string $isp = null, ?bool $proxyFlag = null, ?bool $hostingFlag = null): array
+{
+    $result = [
+        'detected' => false,
+        'method' => null,
+    ];
+
+    if ($ip === '') {
+        return $result;
+    }
+
+    $maxmindResult = detect_vpn_proxy_maxmind($ip);
+    if ($maxmindResult !== null) {
+        if ($maxmindResult === true) {
+            $result['detected'] = true;
+            $result['method'] = 'MaxMind';
+        }
+        return $result;
+    }
+
+    if ($proxyFlag === null || $hostingFlag === null || $isp === null) {
+        $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,isp,proxy,hosting';
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 2,
+            ],
+        ]);
+
+        $json = @file_get_contents($url, false, $context);
+        if ($json !== false) {
+            $data = json_decode($json, true);
+            if (is_array($data) && ($data['status'] ?? '') === 'success') {
+                if ($isp === null && isset($data['isp'])) {
+                    $isp = (string)$data['isp'];
+                }
+                if ($proxyFlag === null && array_key_exists('proxy', $data)) {
+                    $proxyFlag = (bool)$data['proxy'];
+                }
+                if ($hostingFlag === null && array_key_exists('hosting', $data)) {
+                    $hostingFlag = (bool)$data['hosting'];
+                }
+            }
+        }
+    }
+
+    if ($proxyFlag === true || $hostingFlag === true) {
+        $result['detected'] = true;
+        $result['method'] = 'ip-api';
+        return $result;
+    }
+
+    $ispLower = strtolower((string)$isp);
+    if ($ispLower === '') {
+        return $result;
+    }
+
+    $vpnKeywords = ['vpn', 'proxy', 'hosting', 'data center', 'datacenter', 'colo', 'digitalocean', 'ovh', 'm247'];
+    foreach ($vpnKeywords as $kw) {
+        if (strpos($ispLower, $kw) !== false) {
+            $result['detected'] = true;
+            $result['method'] = 'ISP keywords';
+            return $result;
+        }
+    }
+
+    return $result;
+}
+
 function detect_vpn_proxy_maxmind(string $ip): ?bool
 {
     if ($ip === '') {

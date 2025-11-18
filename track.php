@@ -71,12 +71,14 @@ $sh = isset($data['screen_height']) ? (int)$data['screen_height'] : null;
 
 $uaInfo = parse_ua($ua);
 $geo = geo_ip($ip);
-$vpnDetected = detect_vpn_proxy(
+$vpnInfo = detect_vpn_proxy_info(
     $ip,
     $geo['isp'] ?? null,
     array_key_exists('is_proxy', $geo) ? $geo['is_proxy'] : null,
     array_key_exists('is_hosting', $geo) ? $geo['is_hosting'] : null
 );
+$vpnDetected = $vpnInfo['detected'] ?? false;
+$vpnMethod = isset($vpnInfo['method']) && $vpnInfo['method'] !== '' ? (string)$vpnInfo['method'] : null;
 
 if ($lat === null && isset($geo['latitude'])) {
     $lat = $geo['latitude'];
@@ -95,6 +97,7 @@ try {
 }
 
 static $hasVpnDetectedColumn = null;
+static $hasVpnMethodColumn = null;
 if ($hasVpnDetectedColumn === null) {
     try {
         $pdo->query('SELECT vpn_detected FROM visits LIMIT 0');
@@ -103,9 +106,37 @@ if ($hasVpnDetectedColumn === null) {
         $hasVpnDetectedColumn = false;
     }
 }
+if ($hasVpnMethodColumn === null) {
+    try {
+        $pdo->query('SELECT vpn_method FROM visits LIMIT 0');
+        $hasVpnMethodColumn = true;
+    } catch (Throwable $e) {
+        $hasVpnMethodColumn = false;
+    }
+}
 
 try {
-    if ($hasVpnDetectedColumn) {
+    if ($hasVpnDetectedColumn && $hasVpnMethodColumn) {
+        $sql = 'INSERT INTO visits (
+            ip, country, region, city,
+            latitude, longitude, isp, vpn_detected, vpn_method,
+            user_agent, browser_name, browser_version,
+            os_name, os_version, device_type,
+            referer, url, language,
+            screen_width, screen_height,
+            duration_seconds, visit_count,
+            created_at
+        ) VALUES (
+            :ip, :country, :region, :city,
+            :lat, :lon, :isp, :vpn, :vpn_method,
+            :ua, :bname, :bver,
+            :os, :osver, :dtype,
+            :ref, :url, :lang,
+            :sw, :sh,
+            NULL, :vcount,
+            NOW()
+        )';
+    } elseif ($hasVpnDetectedColumn) {
         $sql = 'INSERT INTO visits (
             ip, country, region, city,
             latitude, longitude, isp, vpn_detected,
@@ -171,6 +202,9 @@ try {
     ];
     if ($hasVpnDetectedColumn) {
         $params[':vpn'] = $vpnDetected ? 1 : 0;
+    }
+    if ($hasVpnDetectedColumn && $hasVpnMethodColumn) {
+        $params[':vpn_method'] = $vpnMethod;
     }
     $stmt->execute($params);
 

@@ -405,8 +405,12 @@ function render_visit_country_with_flag(?string $country): string
         <tr><th>ISP</th><td><?= h($visit['isp'] ?? '') ?></td></tr>
         <?php
         $vpnSuspected = false;
+        $vpnMethodLabel = '';
         if (array_key_exists('vpn_detected', $visit) && $visit['vpn_detected'] !== null) {
             $vpnSuspected = (bool)$visit['vpn_detected'];
+            if ($vpnSuspected && array_key_exists('vpn_method', $visit) && $visit['vpn_method'] !== null && $visit['vpn_method'] !== '') {
+                $vpnMethodLabel = (string)$visit['vpn_method'];
+            }
         } else {
             $isp = strtolower((string)($visit['isp'] ?? ''));
             if ($isp !== '') {
@@ -414,13 +418,14 @@ function render_visit_country_with_flag(?string $country): string
                 foreach ($vpnKeywords as $kw) {
                     if (strpos($isp, $kw) !== false) {
                         $vpnSuspected = true;
+                        $vpnMethodLabel = 'ISP keywords';
                         break;
                     }
                 }
             }
         }
         ?>
-        <tr><th>VPN / Proxy suspected</th><td><?= $vpnSuspected ? 'Yes' : 'No' ?></td></tr>
+        <tr><th>VPN / Proxy suspected</th><td><?= $vpnSuspected ? ('Yes' . ($vpnMethodLabel !== '' ? ' (' . h($vpnMethodLabel) . ')' : '')) : 'No' ?></td></tr>
         <tr><th>Browser</th><td><?= h($visit['browser_name'] ?? '') . ' ' . h($visit['browser_version'] ?? '') ?></td></tr>
         <tr><th>OS</th><td><?= h($visit['os_name'] ?? '') . ' ' . h($visit['os_version'] ?? '') ?></td></tr>
         <tr><th>Device type</th><td><?= h($visit['device_type'] ?? '') ?></td></tr>
