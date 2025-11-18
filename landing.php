@@ -51,6 +51,47 @@ function landing_extract_metadata(string $html): array
     ];
 }
 
+function landing_is_vpn_or_proxy_ip(string $ip): bool
+{
+    $ip = trim($ip);
+    if ($ip === '') {
+        return false;
+    }
+
+    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,proxy,hosting,isp,message';
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 2,
+        ],
+    ]);
+
+    $json = @file_get_contents($url, false, $context);
+    if ($json === false) {
+        return false;
+    }
+
+    $data = json_decode($json, true);
+    if (!is_array($data) || ($data['status'] ?? '') !== 'success') {
+        return false;
+    }
+
+    if (!empty($data['proxy']) || !empty($data['hosting'])) {
+        return true;
+    }
+
+    $isp = strtolower((string)($data['isp'] ?? ''));
+    if ($isp !== '') {
+        $vpnKeywords = ['vpn', 'proxy', 'hosting', 'data center', 'datacenter', 'colo', 'digitalocean', 'ovh', 'm247'];
+        foreach ($vpnKeywords as $kw) {
+            if (strpos($isp, $kw) !== false) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 // Path of the current request (e.g. /share/my-link or /news/138822)
 $uri = $_SERVER['REQUEST_URI'] ?? '/landing';
 $path = parse_url($uri, PHP_URL_PATH) ?? '/landing';
@@ -131,6 +172,16 @@ if ($targetUrl === null && $isNews) {
 if ($targetUrl !== null) {
     $pageUrl = $targetUrl;
 }
+
+$vpnBlocked = false;
+if ($isNews) {
+    $clientIp = get_client_ip();
+    if ($clientIp !== '') {
+        $vpnBlocked = landing_is_vpn_or_proxy_ip($clientIp);
+    }
+}
+
+$showIframe = $isNews && $targetUrl !== null && !$vpnBlocked;
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -381,8 +432,8 @@ if ($targetUrl !== null) {
         }
     </style>
 </head>
-<body<?= $isNews ? ' class="news-body"' : '' ?>>
-<?php if ($isNews && $targetUrl !== null): ?>
+<body<?= $showIframe ? ' class="news-body"' : '' ?>>
+<?php if ($showIframe): ?>
     <div class="news-frame-wrapper">
         <iframe class="news-frame" src="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>
@@ -402,26 +453,39 @@ if ($targetUrl !== null) {
                 Thanks for opening this secure smart link. We use basic analytics (IP, browser, device type,
                 approximate location from IP) to understand visits and improve our service.
             </p>
-
-            <div id="consent-banner" class="banner">
-                <div class="banner-heading">Optional precise location</div>
-                <p>
-                    You can share your precise location (GPS) once using your browser's permission. This is used
-                    only for our own analytics and is not shared with third parties.
-                </p>
-                <div class="buttons">
-                    <button id="btn-allow-location"><i class="bi bi-geo-alt-fill icon-inline"></i>Allow location</button>
-                    <button id="btn-no-location"><i class="bi bi-arrow-right-circle icon-inline"></i>Continue without location</button>
+            <?php if ($isNews && $vpnBlocked): ?>
+                <div class="banner">
+                    <div class="banner-heading">VPN / Proxy detected</div>
+                    <p>
+                        We could not display this news article because your connection appears to be coming from a VPN,
+                        proxy or hosting IP. Please disconnect your VPN or proxy and reload this page to read the news.
+                    </p>
                 </div>
-            </div>
 
-            <p class="note">
-                By continuing to use this link, you agree to our use of analytics as described above.
-            </p>
-            <?php if ($targetUrl !== null): ?>
-                <p class="note" style="margin-top: 10px;">
-                    <a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Continue to article on dailysokalersomoy.com</a>
+                <p class="note">
+                    If you believe this is a mistake, try refreshing the page after disabling any VPN or proxy tools.
                 </p>
+            <?php else: ?>
+                <div id="consent-banner" class="banner">
+                    <div class="banner-heading">Optional precise location</div>
+                    <p>
+                        You can share your precise location (GPS) once using your browser's permission. This is used
+                        only for our own analytics and is not shared with third parties.
+                    </p>
+                    <div class="buttons">
+                        <button id="btn-allow-location"><i class="bi bi-geo-alt-fill icon-inline"></i>Allow location</button>
+                        <button id="btn-no-location"><i class="bi bi-arrow-right-circle icon-inline"></i>Continue without location</button>
+                    </div>
+                </div>
+
+                <p class="note">
+                    By continuing to use this link, you agree to our use of analytics as described above.
+                </p>
+                <?php if ($targetUrl !== null): ?>
+                    <p class="note" style="margin-top: 10px;">
+                        <a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Continue to article on dailysokalersomoy.com</a>
+                    </p>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
