@@ -185,15 +185,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-right: 4px;
         }
 
+        .theme-toggle .theme-icon-moon {
+            display: none;
+        }
+
+        [data-theme="dark"] .theme-toggle .theme-icon-sun {
+            display: none;
+        }
+
+        [data-theme="dark"] .theme-toggle .theme-icon-moon {
+            display: inline-block;
+        }
+
         @media (max-width: 480px) {
             .login-box {
                 padding: 22px 18px 24px;
             }
         }
     </style>
-</head>
+ </head>
 <body>
 <button type="button" class="theme-toggle" data-theme-toggle>
+    <i class="bi bi-sun-fill theme-icon-sun"></i>
+    <i class="bi bi-moon-stars-fill theme-icon-moon"></i>
     <span data-theme-toggle-label>Light</span> mode
 </button>
 <div class="login-box">

@@ -372,7 +372,7 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
             left: 0;
             right: 0;
             bottom: 0;
-            height: 52px;
+            height: 64px;
             background: #020b26;
             border-top: 1px solid var(--border-subtle);
             display: none;
@@ -383,7 +383,19 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
         .bottom-nav-link {
             color: var(--text-muted);
             text-decoration: none;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .bottom-nav-link i {
+            font-size: 1.4rem;
+            margin-bottom: 2px;
+        }
+        .bottom-nav-label {
+            font-size: 0.7rem;
+            line-height: 1.1;
         }
         .bottom-nav-link-active {
             color: var(--accent);
@@ -517,6 +529,56 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
             background: rgba(127, 29, 29, 0.4);
             color: #fecaca;
             font-size: 0.75rem;
+        }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+        }
+        .modal-dialog {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border-radius: 14px;
+            padding: 16px 18px;
+            max-width: 320px;
+            width: 90%;
+            box-shadow:
+                0 18px 60px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
+        }
+        .modal-title {
+            font-size: 0.98rem;
+            margin-bottom: 8px;
+        }
+        .modal-body {
+            font-size: 0.86rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .modal-actions button {
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .modal-actions .btn-cancel {
+            background: var(--field-bg);
+            color: var(--text-main);
+        }
+        .modal-actions .btn-danger {
+            background: #ef4444;
+            color: #fef2f2;
         }
 
         .theme-toggle {
@@ -685,7 +747,7 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
                     <td>
                         <a href="<?= h($shareUrl) ?>" target="_blank"><i class="bi bi-box-arrow-up-right icon-inline"></i>Open</a>
                         |
-                        <a href="/admin/share_links?delete=<?= (int)$row['id'] ?>" onclick="return confirm('Delete this share link?');"><i class="bi bi-trash3 icon-inline"></i>Delete</a>
+                        <a href="/admin/share_links?delete=<?= (int)$row['id'] ?>" class="delete-link"><i class="bi bi-trash3 icon-inline"></i>Delete</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -696,11 +758,67 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
         </table>
     </div>
 </div>
+<div id="delete-modal" class="modal-backdrop">
+    <div class="modal-dialog">
+        <div class="modal-title">Delete this share link?</div>
+        <div class="modal-body">This action cannot be undone.</div>
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" id="delete-cancel">Cancel</button>
+            <button type="button" class="btn-danger" id="delete-confirm">Delete</button>
+        </div>
+    </div>
+</div>
 <script src="/assets/js/theme.js"></script>
+<script>
+(function () {
+    var links = document.querySelectorAll('.delete-link');
+    var modal = document.getElementById('delete-modal');
+    var cancelBtn = document.getElementById('delete-cancel');
+    var confirmBtn = document.getElementById('delete-confirm');
+    var pendingUrl = null;
+
+    if (links.length && modal && cancelBtn && confirmBtn) {
+        for (var i = 0; i < links.length; i++) {
+            links[i].addEventListener('click', function (e) {
+                e.preventDefault();
+                pendingUrl = this.href;
+                modal.style.display = 'flex';
+            });
+        }
+
+        cancelBtn.addEventListener('click', function () {
+            modal.style.display = 'none';
+            pendingUrl = null;
+        });
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                pendingUrl = null;
+            }
+        });
+
+        confirmBtn.addEventListener('click', function () {
+            if (pendingUrl) {
+                window.location.href = pendingUrl;
+            }
+        });
+    }
+})();
+</script>
 <div class="bottom-nav">
-    <a href="/admin/dashboard" class="bottom-nav-link"><i class="bi bi-speedometer2"></i></a>
-    <a href="/admin/share_links" class="bottom-nav-link bottom-nav-link-active"><i class="bi bi-link-45deg"></i></a>
-    <a href="/admin/logout" class="bottom-nav-link"><i class="bi bi-box-arrow-right"></i></a>
+    <a href="/admin/dashboard" class="bottom-nav-link">
+        <i class="bi bi-speedometer2"></i>
+        <span class="bottom-nav-label">Dashboard</span>
+    </a>
+    <a href="/admin/share_links" class="bottom-nav-link bottom-nav-link-active">
+        <i class="bi bi-link-45deg"></i>
+        <span class="bottom-nav-label">Share links</span>
+    </a>
+    <a href="/admin/logout" class="bottom-nav-link">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="bottom-nav-label">Logout</span>
+    </a>
 </div>
 </body>
 </html>

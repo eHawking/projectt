@@ -399,7 +399,7 @@ function render_device_with_icon(?string $deviceType): string
             left: 0;
             right: 0;
             bottom: 0;
-            height: 52px;
+            height: 64px;
             background: #020b26;
             border-top: 1px solid var(--border-subtle);
             display: none;
@@ -410,7 +410,19 @@ function render_device_with_icon(?string $deviceType): string
         .bottom-nav-link {
             color: var(--text-muted);
             text-decoration: none;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .bottom-nav-link i {
+            font-size: 1.4rem;
+            margin-bottom: 2px;
+        }
+        .bottom-nav-label {
+            font-size: 0.7rem;
+            line-height: 1.1;
         }
         .bottom-nav-link-active {
             color: var(--accent);
@@ -592,6 +604,10 @@ function render_device_with_icon(?string $deviceType): string
             margin-top: 10px;
             font-size: 0.85rem;
             color: var(--text-muted);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
         }
         .pagination a {
             margin-right: 4px;
@@ -625,6 +641,56 @@ function render_device_with_icon(?string $deviceType): string
         }
         .bulk-actions button:hover {
             background: #dc2626;
+        }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+        }
+        .modal-dialog {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border-radius: 14px;
+            padding: 16px 18px;
+            max-width: 320px;
+            width: 90%;
+            box-shadow:
+                0 18px 60px rgba(15, 23, 42, 0.9),
+                0 0 0 1px rgba(15, 23, 42, 0.9);
+        }
+        .modal-title {
+            font-size: 0.98rem;
+            margin-bottom: 8px;
+        }
+        .modal-body {
+            font-size: 0.86rem;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .modal-actions button {
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .modal-actions .btn-cancel {
+            background: var(--field-bg);
+            color: var(--text-main);
+        }
+        .modal-actions .btn-danger {
+            background: #ef4444;
+            color: #fef2f2;
         }
 
         .theme-toggle {
@@ -945,9 +1011,20 @@ function render_device_with_icon(?string $deviceType): string
             <?php endif; ?>
         </div>
         <div class="bulk-actions">
-            <button type="submit" onclick="return confirm('Delete selected visits? This cannot be undone.');"><i class="bi bi-trash3 icon-inline"></i>Delete selected</button>
+            <button type="button" id="bulk-delete-button"><i class="bi bi-trash3 icon-inline"></i>Delete selected</button>
         </div>
     </form>
+
+    <div id="bulk-delete-modal" class="modal-backdrop">
+        <div class="modal-dialog">
+            <div class="modal-title">Delete selected visits?</div>
+            <div class="modal-body">This action cannot be undone.</div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="bulk-delete-cancel">Cancel</button>
+                <button type="button" class="btn-danger" id="bulk-delete-confirm">Delete</button>
+            </div>
+        </div>
+    </div>
 
     <div class="pagination">
         Page
@@ -964,20 +1041,69 @@ function render_device_with_icon(?string $deviceType): string
     <script>
     (function () {
         var selectAll = document.getElementById('select-all');
-        if (!selectAll) return;
-        selectAll.addEventListener('change', function () {
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                var boxes = document.querySelectorAll('.visit-checkbox');
+                for (var i = 0; i < boxes.length; i++) {
+                    boxes[i].checked = selectAll.checked;
+                }
+            });
+        }
+
+        var bulkButton = document.getElementById('bulk-delete-button');
+        var modal = document.getElementById('bulk-delete-modal');
+        var cancelBtn = document.getElementById('bulk-delete-cancel');
+        var confirmBtn = document.getElementById('bulk-delete-confirm');
+        var form = document.getElementById('bulk-delete-form');
+
+        function anySelected() {
             var boxes = document.querySelectorAll('.visit-checkbox');
             for (var i = 0; i < boxes.length; i++) {
-                boxes[i].checked = selectAll.checked;
+                if (boxes[i].checked) {
+                    return true;
+                }
             }
-        });
+            return false;
+        }
+
+        if (bulkButton && modal && cancelBtn && confirmBtn && form) {
+            bulkButton.addEventListener('click', function () {
+                if (!anySelected()) {
+                    return;
+                }
+                modal.style.display = 'flex';
+            });
+
+            cancelBtn.addEventListener('click', function () {
+                modal.style.display = 'none';
+            });
+
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+
+            confirmBtn.addEventListener('click', function () {
+                form.submit();
+            });
+        }
     })();
     </script>
 </div>
 <div class="bottom-nav">
-    <a href="/admin/dashboard" class="bottom-nav-link bottom-nav-link-active"><i class="bi bi-speedometer2"></i></a>
-    <a href="/admin/share_links" class="bottom-nav-link"><i class="bi bi-link-45deg"></i></a>
-    <a href="/admin/logout" class="bottom-nav-link"><i class="bi bi-box-arrow-right"></i></a>
+    <a href="/admin/dashboard" class="bottom-nav-link bottom-nav-link-active">
+        <i class="bi bi-speedometer2"></i>
+        <span class="bottom-nav-label">Dashboard</span>
+    </a>
+    <a href="/admin/share_links" class="bottom-nav-link">
+        <i class="bi bi-link-45deg"></i>
+        <span class="bottom-nav-label">Share links</span>
+    </a>
+    <a href="/admin/logout" class="bottom-nav-link">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="bottom-nav-label">Logout</span>
+    </a>
 </div>
 </body>
 </html>

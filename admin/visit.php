@@ -253,7 +253,7 @@ function render_visit_country_with_flag(?string $country): string
             left: 0;
             right: 0;
             bottom: 0;
-            height: 52px;
+            height: 64px;
             background: #020b26;
             border-top: 1px solid var(--border-subtle);
             display: none;
@@ -264,7 +264,19 @@ function render_visit_country_with_flag(?string $country): string
         .bottom-nav-link {
             color: var(--text-muted);
             text-decoration: none;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .bottom-nav-link i {
+            font-size: 1.4rem;
+            margin-bottom: 2px;
+        }
+        .bottom-nav-label {
+            font-size: 0.7rem;
+            line-height: 1.1;
         }
         .bottom-nav-link-active {
             color: var(--accent);
@@ -438,9 +450,18 @@ function render_visit_country_with_flag(?string $country): string
 </div>
 <script src="/assets/js/theme.js"></script>
 <div class="bottom-nav">
-    <a href="/admin/dashboard" class="bottom-nav-link bottom-nav-link-active"><i class="bi bi-speedometer2"></i></a>
-    <a href="/admin/share_links" class="bottom-nav-link"><i class="bi bi-link-45deg"></i></a>
-    <a href="/admin/logout" class="bottom-nav-link"><i class="bi bi-box-arrow-right"></i></a>
+    <a href="/admin/dashboard" class="bottom-nav-link bottom-nav-link-active">
+        <i class="bi bi-speedometer2"></i>
+        <span class="bottom-nav-label">Dashboard</span>
+    </a>
+    <a href="/admin/share_links" class="bottom-nav-link">
+        <i class="bi bi-link-45deg"></i>
+        <span class="bottom-nav-label">Share links</span>
+    </a>
+    <a href="/admin/logout" class="bottom-nav-link">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="bottom-nav-label">Logout</span>
+    </a>
 </div>
 </body>
 </html>
