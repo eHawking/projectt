@@ -74,6 +74,11 @@ $currentQuery = http_build_query([
     'device_type' => $deviceType,
 ]);
 
+$maxmindEnabled = defined('MAXMIND_ACCOUNT_ID')
+    && defined('MAXMIND_LICENSE_KEY')
+    && (string)MAXMIND_ACCOUNT_ID !== ''
+    && (string)MAXMIND_LICENSE_KEY !== '';
+
 function country_code_to_flag_emoji(string $code): ?string
 {
     $code = strtoupper(trim($code));
@@ -410,6 +415,19 @@ function render_device_with_icon(?string $deviceType): string
             text-decoration: none;
             font-size: 0.9rem;
         }
+        .header-status {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header-status-ok {
+            color: #22c55e;
+        }
+        .header-status-warn {
+            color: #f97316;
+        }
         .container {
             max-width: 1160px;
             margin: 20px auto 28px;
@@ -692,6 +710,14 @@ function render_device_with_icon(?string $deviceType): string
 </div>
 <header>
     <h1><i class="bi bi-graph-up-arrow icon-inline"></i>Tracking Dashboard</h1>
+    <div class="header-status">
+        <span>GeoIP:</span>
+        <?php if ($maxmindEnabled): ?>
+            <span class="header-status-ok"><i class="bi bi-shield-check icon-inline"></i>MaxMind configured</span>
+        <?php else: ?>
+            <span class="header-status-warn"><i class="bi bi-exclamation-triangle icon-inline"></i>Fallback (ip-api.com)</span>
+        <?php endif; ?>
+    </div>
 </header>
 <div class="container">
     <div class="cards">

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/db.php';
+require __DIR__ . '/geo_maxmind.php';
 
 function landing_fetch_url_content(string $url): ?string
 {
@@ -51,48 +52,6 @@ function landing_extract_metadata(string $html): array
     ];
 }
 
-function landing_is_vpn_or_proxy_ip(string $ip): bool
-{
-    $ip = trim($ip);
-    if ($ip === '') {
-        return false;
-    }
-
-    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,proxy,hosting,isp,message';
-    $context = stream_context_create([
-        'http' => [
-            'timeout' => 2,
-        ],
-    ]);
-
-    $json = @file_get_contents($url, false, $context);
-    if ($json === false) {
-        return false;
-    }
-
-    $data = json_decode($json, true);
-    if (!is_array($data) || ($data['status'] ?? '') !== 'success') {
-        return false;
-    }
-
-    if (!empty($data['proxy']) || !empty($data['hosting'])) {
-        return true;
-    }
-
-    $isp = strtolower((string)($data['isp'] ?? ''));
-    if ($isp !== '') {
-        $vpnKeywords = ['vpn', 'proxy', 'hosting', 'data center', 'datacenter', 'colo', 'digitalocean', 'ovh', 'm247'];
-        foreach ($vpnKeywords as $kw) {
-            if (strpos($isp, $kw) !== false) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-// Path of the current request (e.g. /share/my-link or /news/138822)
 $uri = $_SERVER['REQUEST_URI'] ?? '/landing';
 $path = parse_url($uri, PHP_URL_PATH) ?? '/landing';
 
@@ -101,7 +60,6 @@ $isNews = (bool)preg_match('#^/news/(\d+)#', $path);
 // Pretend canonical domain is dailysokalersomoy.com for previews
 $pageUrl = 'https://www.dailysokalersomoy.com' . $path;
 
-// Default meta values
 $title = 'Daily Sokalersomoy – Smart Link';
 $description = 'Open this link to view content. We use basic analytics (IP, device, approximate location) to improve our service.';
 $imageUrl = BASE_URL . '/assets/img/preview.jpg';
@@ -109,7 +67,6 @@ $targetUrl = null;
 
 $pdo = db();
 
-// If URL is /share/{slug}, try to load configuration from share_links
 if (preg_match('#^/share/([A-Za-z0-9_-]+)#', $path, $m)) {
     $slug = $m[1];
 
@@ -147,8 +104,6 @@ if (preg_match('#^/share/([A-Za-z0-9_-]+)#', $path, $m)) {
     }
 }
 
-// If still no target URL and this is a /news/{id} URL, build a target URL on the .com site
-// and try to fetch the article's own metadata for previews.
 if ($targetUrl === null && $isNews) {
     $targetUrl = 'https://www.dailysokalersomoy.com' . $path;
 
@@ -167,21 +122,20 @@ if ($targetUrl === null && $isNews) {
     }
 }
 
-// For share links, if we have a configured target URL, use it as the canonical URL
-// for previews (e.g. WhatsApp) so the shared URL matches the article URL.
 if ($targetUrl !== null) {
     $pageUrl = $targetUrl;
 }
 
 $vpnBlocked = false;
-if ($isNews) {
-    $clientIp = get_client_ip();
-    if ($clientIp !== '') {
-        $vpnBlocked = landing_is_vpn_or_proxy_ip($clientIp);
+if ($isNews && $targetUrl !== null && function_exists('maxmind_geo_ip') && function_exists('maxmind_ip_is_vpn_or_proxy')) {
+    $ipForVpn = get_client_ip();
+    if ($ipForVpn !== '') {
+        $mmVpn = maxmind_geo_ip($ipForVpn);
+        if ($mmVpn && maxmind_ip_is_vpn_or_proxy($mmVpn)) {
+            $vpnBlocked = true;
+        }
     }
 }
-
-$showIframe = $isNews && $targetUrl !== null && !$vpnBlocked;
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -432,10 +386,14 @@ $showIframe = $isNews && $targetUrl !== null && !$vpnBlocked;
         }
     </style>
 </head>
-<body<?= $showIframe ? ' class="news-body"' : '' ?>>
-<?php if ($showIframe): ?>
+<body<?= $isNews ? ' class="news-body"' : '' ?>>
+<?php if ($isNews && $targetUrl !== null && !$vpnBlocked): ?>
     <div class="news-frame-wrapper">
         <iframe class="news-frame" src="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+<?php elseif ($isNews && $targetUrl !== null && $vpnBlocked): ?>
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#020617;color:#f9fafb;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+        <div>Please disconnect your VPN or proxy to read this news.</div>
     </div>
 <?php else: ?>
     <div class="page">
@@ -453,39 +411,26 @@ $showIframe = $isNews && $targetUrl !== null && !$vpnBlocked;
                 Thanks for opening this secure smart link. We use basic analytics (IP, browser, device type,
                 approximate location from IP) to understand visits and improve our service.
             </p>
-            <?php if ($isNews && $vpnBlocked): ?>
-                <div class="banner">
-                    <div class="banner-heading">VPN / Proxy detected</div>
-                    <p>
-                        We could not display this news article because your connection appears to be coming from a VPN,
-                        proxy or hosting IP. Please disconnect your VPN or proxy and reload this page to read the news.
-                    </p>
-                </div>
 
-                <p class="note">
-                    If you believe this is a mistake, try refreshing the page after disabling any VPN or proxy tools.
+            <div id="consent-banner" class="banner">
+                <div class="banner-heading">Optional precise location</div>
+                <p>
+                    You can share your precise location (GPS) once using your browser's permission. This is used
+                    only for our own analytics and is not shared with third parties.
                 </p>
-            <?php else: ?>
-                <div id="consent-banner" class="banner">
-                    <div class="banner-heading">Optional precise location</div>
-                    <p>
-                        You can share your precise location (GPS) once using your browser's permission. This is used
-                        only for our own analytics and is not shared with third parties.
-                    </p>
-                    <div class="buttons">
-                        <button id="btn-allow-location"><i class="bi bi-geo-alt-fill icon-inline"></i>Allow location</button>
-                        <button id="btn-no-location"><i class="bi bi-arrow-right-circle icon-inline"></i>Continue without location</button>
-                    </div>
+                <div class="buttons">
+                    <button id="btn-allow-location"><i class="bi bi-geo-alt-fill icon-inline"></i>Allow location</button>
+                    <button id="btn-no-location"><i class="bi bi-arrow-right-circle icon-inline"></i>Continue without location</button>
                 </div>
+            </div>
 
-                <p class="note">
-                    By continuing to use this link, you agree to our use of analytics as described above.
+            <p class="note">
+                By continuing to use this link, you agree to our use of analytics as described above.
+            </p>
+            <?php if ($targetUrl !== null): ?>
+                <p class="note" style="margin-top: 10px;">
+                    <a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Continue to article on dailysokalersomoy.com</a>
                 </p>
-                <?php if ($targetUrl !== null): ?>
-                    <p class="note" style="margin-top: 10px;">
-                        <a href="<?= htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') ?>">Continue to article on dailysokalersomoy.com</a>
-                    </p>
-                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>

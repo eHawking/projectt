@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/db.php';
+require __DIR__ . '/geo_maxmind.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -70,13 +71,43 @@ $sw = isset($data['screen_width']) ? (int)$data['screen_width'] : null;
 $sh = isset($data['screen_height']) ? (int)$data['screen_height'] : null;
 
 $uaInfo = parse_ua($ua);
-$geo = geo_ip($ip);
+
+$mm = null;
+if (function_exists('maxmind_geo_ip')) {
+    $mm = maxmind_geo_ip($ip);
+}
+
+$vpnDetected = false;
+if ($mm !== null && is_array($mm)) {
+    $geo = [
+        'country' => $mm['country'] ?? null,
+        'region' => $mm['region'] ?? null,
+        'city' => $mm['city'] ?? null,
+        'latitude' => $mm['latitude'] ?? null,
+        'longitude' => $mm['longitude'] ?? null,
+        'isp' => $mm['isp'] ?? null,
+    ];
+    if (function_exists('maxmind_ip_is_vpn_or_proxy') && maxmind_ip_is_vpn_or_proxy($mm)) {
+        $vpnDetected = true;
+    }
+} else {
+    $geo = geo_ip($ip);
+}
 
 if ($lat === null && isset($geo['latitude'])) {
     $lat = $geo['latitude'];
 }
 if ($lon === null && isset($geo['longitude'])) {
     $lon = $geo['longitude'];
+}
+
+$ispValue = $geo['isp'] ?? null;
+if ($vpnDetected) {
+    if ($ispValue !== null && $ispValue !== '') {
+        $ispValue = 'VPN/Proxy - ' . $ispValue;
+    } else {
+        $ispValue = 'VPN/Proxy';
+    }
 }
 
 $visitCount = 1;
@@ -117,7 +148,7 @@ try {
         ':city' => $geo['city'] ?? null,
         ':lat' => $lat,
         ':lon' => $lon,
-        ':isp' => $geo['isp'] ?? null,
+        ':isp' => $ispValue,
         ':ua' => $ua,
         ':bname' => $uaInfo['browser_name'] ?? null,
         ':bver' => $uaInfo['browser_version'] ?? null,
