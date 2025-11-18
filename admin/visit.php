@@ -30,6 +30,110 @@ if (!empty($visit['ip'])) {
     $ipVisitCount = (int)$cstmt->fetchColumn();
 }
 
+function visit_country_value_to_flag_code(string $value): ?string
+{
+    $code = strtoupper(trim($value));
+    if ($code === '') {
+        return null;
+    }
+
+    $map = [
+        'AFGHANISTAN' => 'AF',
+        'ARGENTINA' => 'AR',
+        'AUSTRALIA' => 'AU',
+        'AUSTRIA' => 'AT',
+        'BAHRAIN' => 'BH',
+        'BANGLADESH' => 'BD',
+        'BELGIUM' => 'BE',
+        'BRAZIL' => 'BR',
+        'CANADA' => 'CA',
+        'CHILE' => 'CL',
+        'CHINA' => 'CN',
+        'DENMARK' => 'DK',
+        'EGYPT' => 'EG',
+        'FINLAND' => 'FI',
+        'FRANCE' => 'FR',
+        'GERMANY' => 'DE',
+        'GREAT BRITAIN' => 'GB',
+        'HONG KONG' => 'HK',
+        'INDIA' => 'IN',
+        'INDONESIA' => 'ID',
+        'IRAN' => 'IR',
+        'IRAQ' => 'IQ',
+        'IRELAND' => 'IE',
+        'ISRAEL' => 'IL',
+        'ITALY' => 'IT',
+        'JAPAN' => 'JP',
+        'JORDAN' => 'JO',
+        'KUWAIT' => 'KW',
+        'LEBANON' => 'LB',
+        'MALAYSIA' => 'MY',
+        'MEXICO' => 'MX',
+        'MYANMAR' => 'MM',
+        'NEPAL' => 'NP',
+        'NETHERLANDS' => 'NL',
+        'NEW ZEALAND' => 'NZ',
+        'NORWAY' => 'NO',
+        'OMAN' => 'OM',
+        'PAKISTAN' => 'PK',
+        'PHILIPPINES' => 'PH',
+        'POLAND' => 'PL',
+        'PORTUGAL' => 'PT',
+        'QATAR' => 'QA',
+        'RUSSIA' => 'RU',
+        'SAUDI ARABIA' => 'SA',
+        'KSA' => 'SA',
+        'SINGAPORE' => 'SG',
+        'SOUTH AFRICA' => 'ZA',
+        'SOUTH KOREA' => 'KR',
+        'KOREA, REPUBLIC OF' => 'KR',
+        'SPAIN' => 'ES',
+        'SRI LANKA' => 'LK',
+        'SRI-LANKA' => 'LK',
+        'SWEDEN' => 'SE',
+        'SWITZERLAND' => 'CH',
+        'THAILAND' => 'TH',
+        'TURKEY' => 'TR',
+        'UAE' => 'AE',
+        'UK' => 'GB',
+        'UNITED ARAB EMIRATES' => 'AE',
+        'UNITED KINGDOM' => 'GB',
+        'UNITED STATES' => 'US',
+        'UNITED STATES OF AMERICA' => 'US',
+        'USA' => 'US',
+        'VIETNAM' => 'VN',
+        'YEMEN' => 'YE',
+    ];
+
+    if (isset($map[$code])) {
+        $code = $map[$code];
+    }
+
+    if (strlen($code) === 2 && ctype_alpha($code)) {
+        return $code;
+    }
+
+    return null;
+}
+
+function render_visit_country_with_flag(?string $country): string
+{
+    $cRaw = trim((string)$country);
+    if ($cRaw === '' || strtolower($cRaw) === 'unknown') {
+        return 'Unknown';
+    }
+
+    $cSafe = htmlspecialchars($cRaw, ENT_QUOTES, 'UTF-8');
+    $code = visit_country_value_to_flag_code($cRaw);
+
+    if ($code !== null) {
+        $codeLower = strtolower($code);
+        return '<span><span class="fi fi-' . $codeLower . '" style="margin-right:4px;"></span>' . $cSafe . '</span>';
+    }
+
+    return '<span><i class="bi bi-flag-fill icon-inline"></i>' . $cSafe . '</span>';
+}
+
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,6 +141,7 @@ if (!empty($visit['ip'])) {
     <title>Visit #<?= (int)$visit['id'] ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/css/flag-icons.min.css">
     <style>
         :root {
             /* Light theme (default) – dark navy CRM style */
@@ -281,7 +386,7 @@ if (!empty($visit['ip'])) {
     <table>
         <tr><th>Date</th><td><?= h($visit['created_at']) ?></td></tr>
         <tr><th>IP</th><td><?= h($visit['ip']) ?></td></tr>
-        <tr><th>Country</th><td><?= h($visit['country'] ?? '') ?></td></tr>
+        <tr><th>Country</th><td><?= render_visit_country_with_flag($visit['country'] ?? null) ?></td></tr>
         <tr><th>Region</th><td><?= h($visit['region'] ?? '') ?></td></tr>
         <tr><th>City</th><td><?= h($visit['city'] ?? '') ?></td></tr>
         <tr><th>Latitude</th><td><?= h($visit['latitude'] !== null ? (string)$visit['latitude'] : '') ?></td></tr>

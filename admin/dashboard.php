@@ -95,7 +95,7 @@ function country_code_to_flag_emoji(string $code): ?string
     return '&#' . $cp1 . ';' . '&#' . $cp2 . ';';
 }
 
-function country_value_to_flag_emoji(string $value): ?string
+function country_value_to_flag_code(string $value): ?string
 {
     $code = strtoupper(trim($value));
     if ($code === '') {
@@ -103,24 +103,71 @@ function country_value_to_flag_emoji(string $value): ?string
     }
 
     $map = [
+        'AFGHANISTAN' => 'AF',
+        'ARGENTINA' => 'AR',
+        'AUSTRALIA' => 'AU',
+        'AUSTRIA' => 'AT',
+        'BAHRAIN' => 'BH',
         'BANGLADESH' => 'BD',
+        'BELGIUM' => 'BE',
+        'BRAZIL' => 'BR',
+        'CANADA' => 'CA',
+        'CHILE' => 'CL',
+        'CHINA' => 'CN',
+        'DENMARK' => 'DK',
+        'EGYPT' => 'EG',
+        'FINLAND' => 'FI',
+        'FRANCE' => 'FR',
+        'GERMANY' => 'DE',
+        'GREAT BRITAIN' => 'GB',
+        'HONG KONG' => 'HK',
         'INDIA' => 'IN',
-        'PAKISTAN' => 'PK',
+        'INDONESIA' => 'ID',
+        'IRAN' => 'IR',
+        'IRAQ' => 'IQ',
+        'IRELAND' => 'IE',
+        'ISRAEL' => 'IL',
+        'ITALY' => 'IT',
+        'JAPAN' => 'JP',
+        'JORDAN' => 'JO',
+        'KUWAIT' => 'KW',
+        'LEBANON' => 'LB',
+        'MALAYSIA' => 'MY',
+        'MEXICO' => 'MX',
+        'MYANMAR' => 'MM',
         'NEPAL' => 'NP',
+        'NETHERLANDS' => 'NL',
+        'NEW ZEALAND' => 'NZ',
+        'NORWAY' => 'NO',
+        'OMAN' => 'OM',
+        'PAKISTAN' => 'PK',
+        'PHILIPPINES' => 'PH',
+        'POLAND' => 'PL',
+        'PORTUGAL' => 'PT',
+        'QATAR' => 'QA',
+        'RUSSIA' => 'RU',
+        'SAUDI ARABIA' => 'SA',
+        'KSA' => 'SA',
+        'SINGAPORE' => 'SG',
+        'SOUTH AFRICA' => 'ZA',
+        'SOUTH KOREA' => 'KR',
+        'KOREA, REPUBLIC OF' => 'KR',
+        'SPAIN' => 'ES',
         'SRI LANKA' => 'LK',
         'SRI-LANKA' => 'LK',
+        'SWEDEN' => 'SE',
+        'SWITZERLAND' => 'CH',
+        'THAILAND' => 'TH',
+        'TURKEY' => 'TR',
+        'UAE' => 'AE',
+        'UK' => 'GB',
+        'UNITED ARAB EMIRATES' => 'AE',
+        'UNITED KINGDOM' => 'GB',
         'UNITED STATES' => 'US',
         'UNITED STATES OF AMERICA' => 'US',
         'USA' => 'US',
-        'UNITED KINGDOM' => 'GB',
-        'GREAT BRITAIN' => 'GB',
-        'UK' => 'GB',
-        'CANADA' => 'CA',
-        'AUSTRALIA' => 'AU',
-        'SAUDI ARABIA' => 'SA',
-        'KSA' => 'SA',
-        'UNITED ARAB EMIRATES' => 'AE',
-        'UAE' => 'AE',
+        'VIETNAM' => 'VN',
+        'YEMEN' => 'YE',
     ];
 
     if (isset($map[$code])) {
@@ -128,7 +175,7 @@ function country_value_to_flag_emoji(string $value): ?string
     }
 
     if (strlen($code) === 2 && ctype_alpha($code)) {
-        return country_code_to_flag_emoji($code);
+        return $code;
     }
 
     return null;
@@ -142,10 +189,11 @@ function render_country_with_flag(?string $country): string
     }
 
     $cSafe = htmlspecialchars($cRaw, ENT_QUOTES, 'UTF-8');
-    $flag = country_value_to_flag_emoji($cRaw);
+    $code = country_value_to_flag_code($cRaw);
 
-    if ($flag !== null) {
-        return '<span>' . $flag . ' ' . $cSafe . '</span>';
+    if ($code !== null) {
+        $codeLower = strtolower($code);
+        return '<span><span class="fi fi-' . $codeLower . '" style="margin-right:4px;"></span>' . $cSafe . '</span>';
     }
 
     return '<span><i class="bi bi-flag-fill icon-inline"></i>' . $cSafe . '</span>';
@@ -174,9 +222,10 @@ function render_country_city_with_flag(?string $country, ?string $city): string
     $text = implode(' / ', $parts);
 
     if ($cSafe !== '') {
-        $flag = country_value_to_flag_emoji($cRaw);
-        if ($flag !== null) {
-            return '<span>' . $flag . ' ' . $text . '</span>';
+        $code = country_value_to_flag_code($cRaw);
+        if ($code !== null) {
+            $codeLower = strtolower($code);
+            return '<span><span class="fi fi-' . $codeLower . '" style="margin-right:4px;"></span>' . $text . '</span>';
         }
 
         return '<span><i class="bi bi-flag-fill icon-inline"></i>' . $text . '</span>';
@@ -208,6 +257,7 @@ function render_device_with_icon(?string $deviceType): string
     <title>Admin Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.3.2/css/flag-icons.min.css">
     <style>
         :root {
             /* Light theme (default) – dark navy CRM style */
