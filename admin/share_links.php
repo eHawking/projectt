@@ -537,6 +537,18 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
             margin-right: 4px;
         }
 
+        .theme-toggle .theme-icon-moon {
+            display: none;
+        }
+
+        [data-theme="dark"] .theme-toggle .theme-icon-sun {
+            display: none;
+        }
+
+        [data-theme="dark"] .theme-toggle .theme-icon-moon {
+            display: inline-block;
+        }
+
         @media (max-width: 900px) {
             body {
                 padding-left: 0;
@@ -565,6 +577,8 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
 </head>
 <body>
 <button type="button" class="theme-toggle" data-theme-toggle>
+    <i class="bi bi-sun-fill theme-icon-sun"></i>
+    <i class="bi bi-moon-stars-fill theme-icon-moon"></i>
     <span data-theme-toggle-label>Light</span> mode
 </button>
 <div class="sidebar">
@@ -576,7 +590,7 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
     </nav>
     <div class="sidebar-user">
         <div>Logged in as <?= h($_SESSION['admin_username'] ?? 'admin') ?></div>
-        <a href="/admin/logout">Logout</a>
+        <a href="/admin/logout"><i class="bi bi-box-arrow-right icon-inline"></i>Logout</a>
     </div>
 </div>
 <header>
@@ -624,7 +638,7 @@ $baseNewsUrl = rtrim(BASE_URL, '/') . '/news/';
             </div>
 
             <div class="field-inline" style="margin-top: 4px; gap: 10px;">
-                <button type="submit" name="action" value="fetch" style="background: #020b26; color: var(--text-main); border: 1px solid var(--border-subtle);">
+                <button type="submit" name="action" value="fetch" style="background: #020b26; color: #f9fafb; border: 1px solid var(--border-subtle);">
                     <i class="bi bi-magic icon-inline"></i>Fetch metadata
                 </button>
                 <button type="submit" name="action" value="save">
